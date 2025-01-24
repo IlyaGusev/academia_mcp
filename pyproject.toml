@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "yarxiv-mcp"
+version = "0.0.1"
+description = "Yet another MCP server that provides access to arXiv papers through their API."
+readme = "README.md"
+authors = [
+    {name = "Ilya Gusev", email = "phoenixilya@gmail.com"}
+]
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "mcp",
+    "xmltodict>=0.14.0",
+    "types-xmltodict>=0.14.0",
+    "requests>=2.32.0",
+    "types-requests>=2.32.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/IlyaGusev/yarxiv_mcp"
+
+[project.scripts]
+yarxiv_mcp = "yarxiv_mcp:main"
