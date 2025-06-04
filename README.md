@@ -1,2 +1,3 @@
-# yarxiv_mcp
-Yet another ArXiv MCP server
+# Academia MCP
+
+A collection of MCP tools related to the search of scientific papers.
