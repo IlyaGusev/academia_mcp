@@ -1,0 +1,32 @@
+name: ci
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout github repo
+      uses: actions/checkout@v3
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        version: "0.7.4"
+    - name: "Set up Python"
+      uses: actions/setup-python@v5
+      with:
+        python-version-file: "pyproject.toml"
+    - name: Install dependencies
+      run: |
+        uv venv .venv
+        source .venv/bin/activate
+        make install
+    - name: Lint
+      run: |
+        make validate
+    - name: Tests
+      run: |
+        make tests
