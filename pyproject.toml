@@ -3,29 +3,54 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "yarxiv-mcp"
-version = "0.0.1"
-description = "Yet another MCP server that provides access to arXiv papers through their API."
+name = "academia-mcp"
+version = "0.0.2"
+description = "MCP server that provides different tools to search for scientific publications"
 readme = "README.md"
 authors = [
     {name = "Ilya Gusev", email = "phoenixilya@gmail.com"}
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "mcp",
+    "mcp==1.9.2",
     "xmltodict>=0.14.0",
     "types-xmltodict>=0.14.0",
     "requests>=2.32.0",
-    "types-requests>=2.32.0"
+    "types-requests>=2.32.0",
+    "pypdf>=5.1.0",
+    "beautifulsoup4>=4.12.0",
+    "types-beautifulsoup4>=4.12.0",
+    "markdownify==0.14.1",
+    "acl-anthology@git+https://github.com/IlyaGusev/acl-anthology",
+    "markdown==3.7.0",
+    "types-markdown==3.7.0.20250322",
+    "black==25.1.0",
+    "mypy==1.16.0",
+    "flake8==7.2.0",
+    "huggingface-hub>=0.32.4",
 ]
 
 [project.urls]
-Homepage = "https://github.com/IlyaGusev/yarxiv_mcp"
+Homepage = "https://github.com/IlyaGusev/academia_mcp"
 
 [project.scripts]
-yarxiv_mcp = "yarxiv_mcp:main"
+academia_mcp = "academia_mcp:main"
+
+[[tool.mypy.overrides]]
+module = "*"
+ignore_missing_imports = true
+follow_imports = "skip"
+
+[tool.setuptools]
+packages = ["academia_mcp"]
+include-package-data = false
+
+[[tool.mypy.overrides]]
+module = "pydantic.*"
+follow_imports = "skip"
+
