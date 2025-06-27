@@ -13,3 +13,6 @@ validate:
 
 test:
 	uv run pytest -s
+
+publish:
+	uv build && uv publish
