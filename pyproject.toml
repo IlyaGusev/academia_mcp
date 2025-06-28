@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "academia-mcp"
-version = "0.0.4"
+version = "0.0.7"
 description = "MCP server that provides different tools to search for scientific publications"
 readme = "README.md"
 authors = [
@@ -17,7 +17,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "mcp==1.9.2",
+    "mcp>=1.9.2",
     "xmltodict>=0.14.0",
     "types-xmltodict>=0.14.0",
     "requests>=2.32.0",
@@ -33,6 +33,7 @@ dependencies = [
     "mypy==1.16.0",
     "flake8==7.2.0",
     "huggingface-hub>=0.32.4",
+    "fire>=0.7.0",
 ]
 
 [project.urls]

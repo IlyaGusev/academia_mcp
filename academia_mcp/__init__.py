@@ -1,7 +1,7 @@
-from .server import server
+import fire  # type: ignore
 
-__version__ = "0.0.1"
+from .server import run
 
 
 def main() -> None:
-    server.run()
+    fire.Fire(run)
