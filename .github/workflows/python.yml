@@ -29,4 +29,4 @@ jobs:
         make validate
     - name: Tests
       run: |
-        make tests
+        make test
