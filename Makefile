@@ -12,7 +12,7 @@ validate:
 	uv run mypy academia_mcp --strict --explicit-package-bases
 
 test:
-	uv run pytest -s tests
+	uv run pytest -s ./tests
 
 publish:
 	uv build && uv publish
