@@ -1,16 +1,14 @@
-from typing import Optional, Union
+from typing import List, Any, Dict, cast, Optional
 from dotenv import load_dotenv
 
+from pydantic import BaseModel
 from openai import OpenAI
-from openai.types.chat import (
-    ChatCompletionSystemMessageParam,
-    ChatCompletionUserMessageParam,
-    ChatCompletionMessage,
-)
+from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessage
 
 
 load_dotenv()
 client = OpenAI()
+
 SYSTEM_PROMPT = (
     "You are a helpful assistant that answers questions about documents accurately and concisely."
 )
@@ -32,6 +30,14 @@ Questions (repeated):
 {questions}
 
 Your citations and answers:"""
+
+
+class ChatMessage(BaseModel):  # type: ignore
+    role: str
+    content: str | List[Dict[str, Any]]
+
+
+ChatMessages = List[ChatMessage]
 
 
 def document_qa(
@@ -63,23 +69,28 @@ def document_qa(
     assert questions and questions.strip(), "Please provide non-empty 'questions'"
     assert document and document.strip(), "Please provide non-empty 'document'"
 
-    messages: list[Union[ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam]] = [
-        ChatCompletionSystemMessageParam(role="system", content=SYSTEM_PROMPT),
-        ChatCompletionUserMessageParam(
-            role="user", content=PROMPT.format(questions=questions, document=document)
+    messages: ChatMessages = [
+        ChatMessage(role="system", content=SYSTEM_PROMPT),
+        ChatMessage(
+            role="user",
+            content=PROMPT.format(questions=questions, document=document),
         ),
     ]
 
-    try:
-        response: ChatCompletionMessage = (
-            client.chat.completions.create(model="gpt-4o-mini", messages=messages, temperature=0.0)
-            .choices[0]
-            .message
-        )
+    sdk_messages = [
+        cast(ChatCompletionMessageParam, m.model_dump(exclude_none=True)) for m in messages
+    ]
 
-        if response.content is None:
-            raise Exception("Response content is None")
-        final_response: str = response.content.strip()
-        return final_response
-    except Exception as e:
-        raise Exception(f"Error generating response: {str(e)}")
+    response: ChatCompletionMessage = (
+        client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=sdk_messages,
+            temperature=0.0,
+        )
+        .choices[0]
+        .message
+    )
+
+    if response.content is None:
+        raise Exception("Response content is None")
+    return response.content.strip()
