@@ -1,4 +1,4 @@
-from academia_mcp.tools import document_qa, arxiv_download
+from academia_mcp.tools import create_document_qa_func, arxiv_download
 
 
 DOCUMENT1 = """
@@ -18,7 +18,7 @@ English constituency parsing both with large and limited training data.
 
 
 def test_document_qa_base() -> None:
-    answer = document_qa(
+    answer = create_document_qa_func()(
         questions="What is BLEU on the WMT 2014 English-to-German translation task?",
         document=DOCUMENT1,
     )
@@ -28,5 +28,5 @@ def test_document_qa_base() -> None:
 def test_document_qa_real_question() -> None:
     questions = "What is the best model for the Russian language according to the role-play benchmark and its final score?"
     document = arxiv_download("2409.06820")
-    answer = document_qa(questions=questions, document=document)
+    answer = create_document_qa_func()(questions=questions, document=document)
     assert "4.62" in answer or "4.68" in answer

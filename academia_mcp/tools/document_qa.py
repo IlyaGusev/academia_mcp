@@ -1,5 +1,5 @@
 import os
-from typing import List, Any, Dict, cast, Optional
+from typing import List, Any, Dict, cast, Optional, Callable
 from dotenv import load_dotenv
 
 from pydantic import BaseModel
@@ -43,58 +43,65 @@ class ChatMessage(BaseModel):  # type: ignore
 ChatMessages = List[ChatMessage]
 
 
-def document_qa(
-    questions: Optional[str] = None,
-    document: Optional[str] = None,
-    question: Optional[str] = None,
-) -> str:
-    """
-    Answer questions about a document.
-    Use this tool when you need to find relevant information in a big document.
-    It takes questions and a document as inputs and generates an answer based on the document.
+def create_document_qa_func(
+    base_url: str = BASE_URL,
+    api_key: str = API_KEY,
+    model_name: str = MODEL_NAME,
+) -> Callable[..., Any]:
+    def document_qa(
+        questions: Optional[str] = None,
+        document: Optional[str] = None,
+        question: Optional[str] = None,
+    ) -> str:
+        """
+        Answer questions about a document.
+        Use this tool when you need to find relevant information in a big document.
+        It takes questions and a document as inputs and generates an answer based on the document.
 
-    Example:
+        Example:
         >>> document = "The quick brown fox jumps over the lazy dog."
         >>> answer = document_qa(questions="What animal is mentioned? How many of them?", document=document)
         >>> print(answer)
         "The document mentions two animals: a fox and a dog. 2 animals."
 
-    Returns an answer to all questions based on the document content.
+        Returns an answer to all questions based on the document content.
 
-    Args:
-    questions: Questions to be answered about the document.
-    document: The full text of the document to analyze.
-    question: Alias for 'questions'
-    """
+        Args:
+        questions: Questions to be answered about the document.
+        document: The full text of the document to analyze.
+        question: Alias for 'questions'
+        """
 
-    if question and not questions:
-        questions = question
-    assert questions and questions.strip(), "Please provide non-empty 'questions'"
-    assert document and document.strip(), "Please provide non-empty 'document'"
+        if question and not questions:
+            questions = question
+        assert questions and questions.strip(), "Please provide non-empty 'questions'"
+        assert document and document.strip(), "Please provide non-empty 'document'"
 
-    messages: ChatMessages = [
-        ChatMessage(role="system", content=SYSTEM_PROMPT),
-        ChatMessage(
-            role="user",
-            content=PROMPT.format(questions=questions, document=document),
-        ),
-    ]
+        messages: ChatMessages = [
+            ChatMessage(role="system", content=SYSTEM_PROMPT),
+            ChatMessage(
+                role="user",
+                content=PROMPT.format(questions=questions, document=document),
+            ),
+        ]
 
-    sdk_messages = [
-        cast(ChatCompletionMessageParam, m.model_dump(exclude_none=True)) for m in messages
-    ]
+        sdk_messages = [
+            cast(ChatCompletionMessageParam, m.model_dump(exclude_none=True)) for m in messages
+        ]
 
-    client = OpenAI(base_url=BASE_URL, api_key=API_KEY)
-    response: ChatCompletionMessage = (
-        client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=sdk_messages,
-            temperature=0.0,
+        client = OpenAI(base_url=base_url, api_key=api_key)
+        response: ChatCompletionMessage = (
+            client.chat.completions.create(
+                model=MODEL_NAME,
+                messages=sdk_messages,
+                temperature=0.0,
+            )
+            .choices[0]
+            .message
         )
-        .choices[0]
-        .message
-    )
 
-    if response.content is None:
-        raise Exception("Response content is None")
-    return response.content.strip()
+        if response.content is None:
+            raise Exception("Response content is None")
+        return response.content.strip()
+
+    return document_qa
