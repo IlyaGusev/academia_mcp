@@ -1,4 +1,6 @@
 import os
+import socket
+from typing import Optional
 
 import fire  # type: ignore
 import uvicorn
@@ -19,9 +21,20 @@ BASE_URL = os.getenv("BASE_URL", "https://openrouter.ai/api/v1")
 MODEL_NAME = os.getenv("DOCUMENT_QA_MODEL_NAME", "gpt-4o-mini")
 
 
+def find_free_port() -> int:
+    for port in range(5000, 6001):
+        try:
+            with socket.socket() as s:
+                s.bind(("", port))
+                return port
+        except Exception:
+            continue
+    return 5000
+
+
 def run(
     host: str = "0.0.0.0",
-    port: int = 5050,
+    port: Optional[int] = None,
     api_key: str = API_KEY,
     base_url: str = BASE_URL,
     model_name: str = MODEL_NAME,
@@ -40,6 +53,8 @@ def run(
         )
 
     http_app = server.streamable_http_app()
+    if port is None:
+        port = find_free_port()
     uvicorn.run(http_app, host=host, port=port)
 
 
