@@ -71,6 +71,7 @@ def create_document_qa_func(
         document: The full text of the document to analyze.
         question: Alias for 'questions'
         """
+        print(questions, document, question)
 
         if question and not questions:
             questions = question
