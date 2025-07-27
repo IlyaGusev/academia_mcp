@@ -28,5 +28,7 @@ jobs:
       run: |
         make validate
     - name: Tests
+      env:
+        OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       run: |
         make test
