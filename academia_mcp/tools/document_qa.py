@@ -1,3 +1,4 @@
+import os
 from typing import List, Any, Dict, cast, Optional
 from dotenv import load_dotenv
 
@@ -7,8 +8,10 @@ from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessage
 
 
 load_dotenv()
-client = OpenAI()
 
+BASE_URL = os.getenv("BASE_URL", "https://openrouter.ai/api/v1")
+API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+MODEL_NAME = os.getenv("DOCUMENT_QA_MODEL_NAME", "gpt-4o-mini")
 SYSTEM_PROMPT = (
     "You are a helpful assistant that answers questions about documents accurately and concisely."
 )
@@ -81,9 +84,10 @@ def document_qa(
         cast(ChatCompletionMessageParam, m.model_dump(exclude_none=True)) for m in messages
     ]
 
+    client = OpenAI(base_url=BASE_URL, api_key=API_KEY)
     response: ChatCompletionMessage = (
         client.chat.completions.create(
-            model="gpt-4o-mini",
+            model=MODEL_NAME,
             messages=sdk_messages,
             temperature=0.0,
         )
