@@ -49,9 +49,8 @@ def create_document_qa_func(
     model_name: str = MODEL_NAME,
 ) -> Callable[..., Any]:
     def document_qa(
-        questions: Optional[str] = None,
-        document: Optional[str] = None,
-        question: Optional[str] = None,
+        document: str,
+        questions: str,
     ) -> str:
         """
         Answer questions about a document.
@@ -69,12 +68,7 @@ def create_document_qa_func(
         Args:
         questions: Questions to be answered about the document.
         document: The full text of the document to analyze.
-        question: Alias for 'questions'
         """
-        print(questions, document, question)
-
-        if question and not questions:
-            questions = question
         assert questions and questions.strip(), "Please provide non-empty 'questions'"
         assert document and document.strip(), "Please provide non-empty 'document'"
 
