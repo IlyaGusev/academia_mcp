@@ -1,5 +1,5 @@
 import os
-from typing import List, Any, Dict, cast, Optional, Callable
+from typing import List, Any, Dict, cast, Callable
 from dotenv import load_dotenv
 
 from pydantic import BaseModel
