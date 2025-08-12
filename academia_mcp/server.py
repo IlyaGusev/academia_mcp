@@ -13,6 +13,7 @@ from .tools.s2_citations import s2_citations
 from .tools.hf_datasets_search import hf_datasets_search
 from .tools.anthology_search import anthology_search
 from .tools.document_qa import create_document_qa_func
+from .tools.md_to_pdf import md_to_pdf
 
 load_dotenv()
 
@@ -46,6 +47,7 @@ def run(
     server.add_tool(s2_citations)
     server.add_tool(hf_datasets_search)
     server.add_tool(anthology_search)
+    server.add_tool(md_to_pdf)
 
     if api_key:
         server.add_tool(

@@ -24,6 +24,9 @@ jobs:
         uv venv .venv
         source .venv/bin/activate
         make install
+    - name: Install latex
+      run: |
+        sudo apt install texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra
     - name: Lint
       run: |
         make validate
