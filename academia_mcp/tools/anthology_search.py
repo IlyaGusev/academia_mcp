@@ -17,7 +17,8 @@ class AnthologySingleton:
         return cls.instance
 
 
-SORT_BY_OPTIONS = ("relevance", "published")
+SORT_BY_OPTIONS = ("relevance", "submittedDate", "published")
+SORT_BY_MAPPING = {"submittedDate": "published"}
 SORT_ORDER_OPTIONS = ("ascending", "descending")
 
 
@@ -163,6 +164,8 @@ def anthology_search(
     assert limit > 0, "Error: limit should be greater than 0"
     assert not _has_cyrillic(query), "Error: use only Latin script for queries"
     assert include_abstracts is not None, "Error: include_abstracts must be bool"
+
+    sort_by = SORT_BY_MAPPING.get(sort_by, sort_by)
 
     singleton = AnthologySingleton.get()
     all_papers = [

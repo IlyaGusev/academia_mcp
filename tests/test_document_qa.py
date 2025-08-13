@@ -19,7 +19,7 @@ English constituency parsing both with large and limited training data.
 
 def test_document_qa_base() -> None:
     answer = create_document_qa_func()(
-        questions="What is BLEU on the WMT 2014 English-to-German translation task?",
+        question="What is BLEU on the WMT 2014 English-to-German translation task?",
         document=DOCUMENT1,
     )
     assert "28.4" in answer
@@ -28,5 +28,5 @@ def test_document_qa_base() -> None:
 def test_document_qa_real_question() -> None:
     questions = "What is the best model for the Russian language according to the role-play benchmark and its final score?"
     document = arxiv_download("2409.06820")
-    answer = create_document_qa_func()(questions=questions, document=document)
+    answer = create_document_qa_func()(question=questions, document=document)
     assert "4.62" in answer or "4.68" in answer

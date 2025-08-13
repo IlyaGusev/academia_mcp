@@ -11,7 +11,7 @@ load_dotenv()
 
 BASE_URL = os.getenv("BASE_URL", "https://openrouter.ai/api/v1")
 API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-MODEL_NAME = os.getenv("DOCUMENT_QA_MODEL_NAME", "gpt-4o-mini")
+MODEL_NAME = os.getenv("DOCUMENT_QA_MODEL_NAME", "deepseek/deepseek-chat-v3-0324")
 SYSTEM_PROMPT = (
     "You are a helpful assistant that answers questions about documents accurately and concisely."
 )
@@ -22,7 +22,7 @@ Answer all given questions one by one.
 Make sure that you answer the actual questions, and not some other similar questions.
 
 Questions:
-{questions}
+{question}
 
 Document:
 ==== BEGIN DOCUMENT ====
@@ -30,7 +30,7 @@ Document:
 ==== END DOCUMENT ====
 
 Questions (repeated):
-{questions}
+{question}
 
 Your citations and answers:"""
 
@@ -50,33 +50,33 @@ def create_document_qa_func(
 ) -> Callable[..., Any]:
     def document_qa(
         document: str,
-        questions: str,
+        question: str,
     ) -> str:
         """
-        Answer questions about a document.
+        Answer a question about a document.
         Use this tool when you need to find relevant information in a big document.
-        It takes questions and a document as inputs and generates an answer based on the document.
+        It takes a question and a document as inputs and generates an answer based on the document.
 
         Example:
         >>> document = "The quick brown fox jumps over the lazy dog."
-        >>> answer = document_qa(questions="What animal is mentioned? How many of them?", document=document)
+        >>> answer = document_qa(question="What animal is mentioned? How many of them?", document=document)
         >>> print(answer)
         "The document mentions two animals: a fox and a dog. 2 animals."
 
         Returns an answer to all questions based on the document content.
 
         Args:
-        questions: Questions to be answered about the document.
+        question: Question (or questions) to be answered about the document.
         document: The full text of the document to analyze.
         """
-        assert questions and questions.strip(), "Please provide non-empty 'questions'"
+        assert question and question.strip(), "Please provide non-empty 'question'"
         assert document and document.strip(), "Please provide non-empty 'document'"
 
         messages: ChatMessages = [
             ChatMessage(role="system", content=SYSTEM_PROMPT),
             ChatMessage(
                 role="user",
-                content=PROMPT.format(questions=questions, document=document),
+                content=PROMPT.format(question=question, document=document),
             ),
         ]
 
@@ -87,7 +87,7 @@ def create_document_qa_func(
         client = OpenAI(base_url=base_url, api_key=api_key)
         response: ChatCompletionMessage = (
             client.chat.completions.create(
-                model=MODEL_NAME,
+                model=model_name,
                 messages=sdk_messages,
                 temperature=0.0,
             )
