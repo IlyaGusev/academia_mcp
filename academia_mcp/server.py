@@ -3,7 +3,6 @@ import socket
 from typing import Optional
 
 import fire  # type: ignore
-import uvicorn
 from mcp.server.fastmcp import FastMCP
 from dotenv import load_dotenv
 
@@ -73,10 +72,11 @@ def run(
             create_document_qa_func(api_key=api_key, base_url=base_url, model_name=model_name)
         )
 
-    http_app = server.streamable_http_app()
     if port is None:
         port = find_free_port()
-    uvicorn.run(http_app, host=host, port=port)
+    server.settings.port = port
+    server.settings.host = host
+    server.run(transport="streamable-http")
 
 
 if __name__ == "__main__":
