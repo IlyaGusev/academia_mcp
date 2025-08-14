@@ -29,17 +29,9 @@ def post_with_retries(
         "Content-Type": "application/json",
     }
 
-    try:
-        response = session.post(url, headers=headers, json=payload, timeout=timeout)
-        response.raise_for_status()
-        return response
-    except (
-        requests.exceptions.ConnectionError,
-        requests.exceptions.RequestException,
-        requests.exceptions.HTTPError,
-    ) as e:
-        print(f"Failed after {retry_strategy.total} retries: {str(e)}")
-        raise
+    response = session.post(url, headers=headers, json=payload, timeout=timeout)
+    response.raise_for_status()
+    return response
 
 
 def get_with_retries(
@@ -66,14 +58,6 @@ def get_with_retries(
         headers["x-subscription-token"] = api_key
         headers["Authorization"] = f"Bearer {api_key}"
 
-    try:
-        response = session.get(url, headers=headers, timeout=timeout, params=params)
-        response.raise_for_status()
-        return response
-    except (
-        requests.exceptions.ConnectionError,
-        requests.exceptions.RequestException,
-        requests.exceptions.HTTPError,
-    ) as e:
-        print(f"Failed after {retry_strategy.total} retries: {str(e)}")
-        raise
+    response = session.get(url, headers=headers, timeout=timeout, params=params)
+    response.raise_for_status()
+    return response
