@@ -14,7 +14,8 @@ from .tools.hf_datasets_search import hf_datasets_search
 from .tools.anthology_search import anthology_search
 from .tools.document_qa import create_document_qa_func
 from .tools.md_to_pdf import md_to_pdf
-from .tools.web_search import web_search
+from .tools.web_search import web_search, tavily_web_search, exa_web_search, brave_web_search
+from .tools.visit_webpage import visit_webpage
 
 load_dotenv()
 
@@ -51,6 +52,10 @@ def run(
     server.add_tool(anthology_search)
     server.add_tool(md_to_pdf)
     server.add_tool(web_search)
+    server.add_tool(tavily_web_search)
+    server.add_tool(exa_web_search)
+    server.add_tool(brave_web_search)
+    server.add_tool(visit_webpage)
 
     if api_key:
         server.add_tool(

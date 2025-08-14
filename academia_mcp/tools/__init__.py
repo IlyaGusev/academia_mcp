@@ -5,7 +5,7 @@ from .hf_datasets_search import hf_datasets_search
 from .s2_citations import s2_get_references, s2_get_citations
 from .document_qa import create_document_qa_func
 from .md_to_pdf import md_to_pdf
-from .web_search import web_search
+from .web_search import web_search, tavily_web_search, exa_web_search, brave_web_search
 from .visit_webpage import visit_webpage
 
 
@@ -19,5 +19,8 @@ __all__ = [
     "create_document_qa_func",
     "md_to_pdf",
     "web_search",
+    "tavily_web_search",
+    "exa_web_search",
+    "brave_web_search",
     "visit_webpage",
 ]

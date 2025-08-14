@@ -14,9 +14,11 @@ import bs4
 from markdownify import MarkdownConverter  # type: ignore
 from pypdf import PdfReader
 
+from academia_mcp.utils import get_with_retries
+
 
 def download_pdf(url: str, output_path: Path) -> None:
-    response = requests.get(url)
+    response = get_with_retries(url)
     response.raise_for_status()
     content_type = response.headers.get("content-type")
     assert content_type
@@ -229,7 +231,7 @@ def _extract_citations(soup_biblist: bs4.element.Tag) -> List[Dict[str, Any]]:
 
 def _parse_html(paper_id: str) -> Dict[str, Any]:
     url = HTML_URL.format(paper_id=paper_id)
-    response = requests.get(url)
+    response = get_with_retries(url)
     response.raise_for_status()
     content = response.text
 
@@ -254,7 +256,7 @@ def _parse_html(paper_id: str) -> Dict[str, Any]:
 
 def _parse_abs(paper_id: str) -> Dict[str, str]:
     url = ABS_URL.format(paper_id=paper_id)
-    response = requests.get(url)
+    response = get_with_retries(url)
     response.raise_for_status()
     content = response.text
 

@@ -24,6 +24,7 @@ def post_with_retries(
 
     headers = {
         "x-api-key": api_key,
+        "x-subscription-token": api_key,
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
@@ -42,7 +43,11 @@ def post_with_retries(
 
 
 def get_with_retries(
-    url: str, api_key: Optional[str] = None, timeout: int = 30, num_retries: int = 3
+    url: str,
+    api_key: Optional[str] = None,
+    timeout: int = 30,
+    num_retries: int = 3,
+    params: Optional[Dict[str, Any]] = None,
 ) -> requests.Response:
     retry_strategy = Retry(
         total=num_retries,
@@ -58,10 +63,11 @@ def get_with_retries(
     headers = {}
     if api_key:
         headers["x-api-key"] = api_key
+        headers["x-subscription-token"] = api_key
         headers["Authorization"] = f"Bearer {api_key}"
 
     try:
-        response = session.get(url, headers=headers, timeout=timeout)
+        response = session.get(url, headers=headers, timeout=timeout, params=params)
         response.raise_for_status()
         return response
     except (
