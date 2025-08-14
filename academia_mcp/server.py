@@ -1,6 +1,6 @@
 import os
 import socket
-from typing import Optional
+from typing import Optional, Literal
 
 import fire  # type: ignore
 from mcp.server.fastmcp import FastMCP
@@ -42,6 +42,7 @@ def run(
     model_name: str = MODEL_NAME,
     mount_path: str = "/",
     streamable_http_path: str = "/mcp",
+    transport: Literal["stdio", "sse", "streamable-http"] = "streamable-http",
 ) -> None:
     server = FastMCP(
         "Academia MCP",
@@ -76,7 +77,7 @@ def run(
         port = find_free_port()
     server.settings.port = port
     server.settings.host = host
-    server.run(transport="streamable-http")
+    server.run(transport=transport)
 
 
 if __name__ == "__main__":
