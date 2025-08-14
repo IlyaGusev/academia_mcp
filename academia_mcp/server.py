@@ -51,10 +51,14 @@ def run(
     server.add_tool(hf_datasets_search)
     server.add_tool(anthology_search)
     server.add_tool(md_to_pdf)
-    server.add_tool(web_search)
-    server.add_tool(tavily_web_search)
-    server.add_tool(exa_web_search)
-    server.add_tool(brave_web_search)
+    if os.getenv("TAVILY_API_KEY"):
+        server.add_tool(tavily_web_search)
+    if os.getenv("EXA_API_KEY"):
+        server.add_tool(exa_web_search)
+    if os.getenv("BRAVE_API_KEY"):
+        server.add_tool(brave_web_search)
+    if os.getenv("EXA_API_KEY") or os.getenv("BRAVE_API_KEY") or os.getenv("TAVILY_API_KEY"):
+        server.add_tool(web_search)
     server.add_tool(visit_webpage)
 
     if api_key:
