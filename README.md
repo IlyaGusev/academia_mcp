@@ -5,6 +5,8 @@ A collection of MCP tools related to the search of scientific papers:
 - ACL Anthology search
 - HuggingFact datasets search
 - Semantic Scholar citation graphs
+- Web search: Exa/Brave/Tavily
+- Page crawler
 
 Install:
 ```
@@ -23,7 +25,9 @@ Claude Desktop config:
       "command": "python3",
       "args": [
         "-m",
-        "academia_mcp"
+        "academia_mcp",
+        "--transport",
+        "stdio"
       ]
     }
   }
