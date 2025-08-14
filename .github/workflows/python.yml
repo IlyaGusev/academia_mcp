@@ -35,5 +35,6 @@ jobs:
         OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
         TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+        BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
       run: |
         make test
