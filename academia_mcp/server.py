@@ -41,8 +41,15 @@ def run(
     api_key: str = API_KEY,
     base_url: str = BASE_URL,
     model_name: str = MODEL_NAME,
+    mount_path: str = "/",
+    streamable_http_path: str = "/mcp",
 ) -> None:
-    server = FastMCP("Academia MCP", stateless_http=True)
+    server = FastMCP(
+        "Academia MCP",
+        stateless_http=True,
+        streamable_http_path=streamable_http_path,
+        mount_path=mount_path,
+    )
 
     server.add_tool(arxiv_search)
     server.add_tool(arxiv_download)
