@@ -6,16 +6,18 @@ from .s2_citations import s2_get_references, s2_get_citations
 from .document_qa import create_document_qa_func
 from .md_to_pdf import md_to_pdf
 from .web_search import web_search
+from .visit_webpage import visit_webpage
 
 
 __all__ = [
     "arxiv_search",
     "arxiv_download",
     "anthology_search",
-    "s2_citations",
-    "s2_citations_reversed",
+    "s2_get_references",
+    "s2_get_citations",
     "hf_datasets_search",
     "create_document_qa_func",
     "md_to_pdf",
     "web_search",
+    "visit_webpage",
 ]

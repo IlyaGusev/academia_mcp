@@ -6,10 +6,10 @@ import json
 import re
 from typing import Optional, List, Dict, Any, Union
 from datetime import datetime, date
-from urllib3.util.retry import Retry
 
-import requests
 import xmltodict
+
+from academia_mcp.utils import get_with_retries
 
 BASE_URL = "http://export.arxiv.org"
 URL_TEMPLATE = "{base_url}/api/query?search_query={query}&start={start}&sortBy={sort_by}&sortOrder={sort_order}&max_results={limit}"
@@ -124,32 +124,6 @@ def _format_entries(
     )
 
 
-def _get_results(url: str) -> requests.Response:
-    retry_strategy = Retry(
-        total=3,
-        backoff_factor=3,
-        status_forcelist=[500, 502, 503, 504],
-        allowed_methods=["GET"],
-    )
-
-    session = requests.Session()
-    adapter = requests.adapters.HTTPAdapter(max_retries=retry_strategy)
-    session.mount("http://", adapter)
-
-    try:
-        response = session.get(url, timeout=30)
-        response.raise_for_status()
-        return response
-    except (
-        requests.exceptions.ConnectionError,
-        requests.exceptions.RequestException,
-    ) as e:
-        print(f"Failed after {retry_strategy.total} retries: {str(e)}")
-        raise
-
-    return response
-
-
 def arxiv_search(
     query: str,
     offset: Optional[int] = 0,
@@ -227,7 +201,7 @@ def arxiv_search(
         sort_order=sort_order,
     )
 
-    response = _get_results(url)
+    response = get_with_retries(url)
     content = response.content
     parsed_content = xmltodict.parse(content)
 

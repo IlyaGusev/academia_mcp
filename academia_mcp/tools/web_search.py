@@ -1,45 +1,13 @@
 import os
 import json
-from typing import Any, Dict, Optional
+from typing import Optional
 
-from urllib3.util.retry import Retry
-import requests
+from academia_mcp.utils import post_with_retries
 
 
 EXA_SEARCH_URL = "https://api.exa.ai/search"
 TAVILY_SEARCH_URL = "https://api.tavily.com/search"
 EXCLUDE_DOMAINS = ["chatpaper.com"]
-
-
-def _get_results(url: str, payload: Dict[str, Any], api_key: str) -> requests.Response:
-    retry_strategy = Retry(
-        total=3,
-        backoff_factor=3,
-        status_forcelist=[429, 500, 502, 503, 504],
-        allowed_methods=["POST"],
-    )
-
-    session = requests.Session()
-    adapter = requests.adapters.HTTPAdapter(max_retries=retry_strategy)
-    session.mount("https://", adapter)
-
-    headers = {
-        "x-api-key": api_key,
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-    }
-
-    try:
-        response = session.post(url, headers=headers, json=payload, timeout=30)
-        response.raise_for_status()
-        return response
-    except (
-        requests.exceptions.ConnectionError,
-        requests.exceptions.RequestException,
-        requests.exceptions.HTTPError,
-    ) as e:
-        print(f"Failed after {retry_strategy.total} retries: {str(e)}")
-        raise
 
 
 def web_search(
@@ -84,7 +52,7 @@ def web_search(
             },
         }
 
-        response = _get_results(EXA_SEARCH_URL, payload, key)
+        response = post_with_retries(EXA_SEARCH_URL, payload, key)
         results = response.json()["results"]
 
     elif provider == "tavily":
@@ -96,7 +64,7 @@ def web_search(
             "auto_parameters": True,
             "exclude_domains": EXCLUDE_DOMAINS,
         }
-        response = _get_results(TAVILY_SEARCH_URL, payload, key)
+        response = post_with_retries(TAVILY_SEARCH_URL, payload, key)
         results = response.json()["results"]
 
     return json.dumps({"results": results}, ensure_ascii=False)

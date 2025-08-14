@@ -3,39 +3,14 @@
 
 import json
 from typing import Optional, List, Dict, Any
-from urllib3.util.retry import Retry
 
-import requests
+from academia_mcp.utils import get_with_retries
+
 
 OLD_API_URL_TEMPLATE = "https://api.semanticscholar.org/v1/paper/{paper_id}"
 GRAPH_URL_TEMPLATE = "https://api.semanticscholar.org/graph/v1/paper/{paper_id}/citations?fields={fields}&offset={offset}&limit={limit}"
 REVERSED_GRAPH_URL_TEMPLATE = "https://api.semanticscholar.org/graph/v1/paper/{paper_id}/references?fields={fields}&offset={offset}&limit={limit}"
 FIELDS = "title,authors,externalIds,venue,citationCount,publicationDate"
-
-
-def _get_results(url: str) -> requests.Response:
-    retry_strategy = Retry(
-        total=3,
-        backoff_factor=30,
-        status_forcelist=[429, 500, 502, 503, 504],
-        allowed_methods=["GET"],
-    )
-
-    session = requests.Session()
-    adapter = requests.adapters.HTTPAdapter(max_retries=retry_strategy)
-    session.mount("https://", adapter)
-
-    try:
-        response = session.get(url, timeout=30)
-        response.raise_for_status()
-        return response
-    except (
-        requests.exceptions.ConnectionError,
-        requests.exceptions.RequestException,
-        requests.exceptions.HTTPError,
-    ) as e:
-        print(f"Failed after {retry_strategy.total} retries: {str(e)}")
-        raise
 
 
 def _format_authors(authors: List[Dict[str, Any]]) -> List[str]:
@@ -103,14 +78,14 @@ def s2_get_citations(
     paper_id = f"arxiv:{arxiv_id}"
 
     url = GRAPH_URL_TEMPLATE.format(paper_id=paper_id, fields=FIELDS, offset=offset, limit=limit)
-    response = _get_results(url)
+    response = get_with_retries(url)
     result = response.json()
     entries = result["data"]
     total_count = len(result["data"]) + result["offset"]
 
     if "next" in result:
         paper_url = OLD_API_URL_TEMPLATE.format(paper_id=paper_id)
-        paper_response = _get_results(paper_url)
+        paper_response = get_with_retries(paper_url)
         paper_result = paper_response.json()
         total_count = paper_result["numCitedBy"]
 
@@ -144,7 +119,7 @@ def s2_get_references(
     url = REVERSED_GRAPH_URL_TEMPLATE.format(
         paper_id=paper_id, fields=FIELDS, offset=offset, limit=limit
     )
-    response = _get_results(url)
+    response = get_with_retries(url)
     result = response.json()
     entries = result["data"]
     total_count = len(result["data"]) + result["offset"]
