@@ -68,6 +68,12 @@ def tavily_web_search(query: str, limit: Optional[int] = 20) -> str:
     }
     response = post_with_retries(TAVILY_SEARCH_URL, payload, key)
     results = response.json()["results"]
+    for result in results:
+        content = " ".join(result["content"].split(" ")[:40])
+        content = content.strip("., ")
+        result["content"] = content
+        result.pop("raw_content", None)
+        result.pop("score", None)
     return json.dumps({"results": results}, ensure_ascii=False)
 
 

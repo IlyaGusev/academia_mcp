@@ -17,3 +17,8 @@ def test_s2_citations_transformers() -> None:
 def test_s2_citations_reversed() -> None:
     citations = json.loads(s2_get_references("1706.03762"))
     assert citations["total_count"] <= 100
+
+
+def test_s2_citations_versions() -> None:
+    citations = json.loads(s2_get_citations("2409.06820v4"))
+    assert citations["total_count"] >= 1
