@@ -1,7 +1,10 @@
+import re
+import json
 from urllib3.util.retry import Retry
 from typing import Dict, Any, Optional
 
 import requests
+from jinja2 import Template
 
 
 def post_with_retries(
@@ -61,3 +64,84 @@ def get_with_retries(
     response = session.get(url, headers=headers, timeout=timeout, params=params)
     response.raise_for_status()
     return response
+
+
+def clean_json_string(text: str) -> str:
+    try:
+        return json.dumps(json.loads(text))
+    except json.JSONDecodeError:
+        pass
+    text = text.strip()
+    text = re.sub(r",(\s*[}\]])", r"\1", text)
+    text = re.sub(r"'([^']*)':", r'"\1":', text)
+    text = re.sub(r":\s*'([^']*)'", r': "\1"', text)
+    text = re.sub(r"//.*?$", "", text, flags=re.MULTILINE)
+    text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
+
+    prefixes_to_remove = [
+        "json:",
+        "JSON:",
+        "Here is the JSON:",
+        "Here's the JSON:",
+        "The JSON is:",
+        "Result:",
+        "Output:",
+        "Response:",
+    ]
+
+    for prefix in prefixes_to_remove:
+        if text.lower().startswith(prefix.lower()):
+            text = text[len(prefix) :].strip()
+
+    return text
+
+
+def extract_json(text: str) -> Any:
+    assert isinstance(text, str), "Input must be a string"
+
+    text = text.strip()
+    assert text, "Input must be a non-empty string"
+
+    json_blocks = re.findall(r"```json\s*(.*?)\s*```", text, re.DOTALL | re.IGNORECASE)
+    for block in json_blocks:
+        try:
+            return json.loads(block.strip())
+        except json.JSONDecodeError:
+            continue
+
+    code_blocks = re.findall(r"```\s*(.*?)\s*```", text, re.DOTALL)
+    for block in code_blocks:
+        block = block.strip()
+        if block.startswith(("{", "[")):
+            try:
+                return json.loads(block)
+            except json.JSONDecodeError:
+                continue
+
+    try:
+        return json.loads(clean_json_string(text))
+    except json.JSONDecodeError:
+        pass
+
+    json_patterns = [
+        r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}",
+        r"\[[^\[\]]*(?:\[[^\[\]]*\][^\[\]]*)*\]",
+        r"\{.*\}",
+        r"\[.*\]",
+    ]
+
+    for pattern in json_patterns:
+        matches = re.findall(pattern, text, re.DOTALL)
+        for match in sorted(matches, key=len, reverse=True):
+            try:
+                cleaned = clean_json_string(match.strip())
+                return json.loads(cleaned)
+            except json.JSONDecodeError:
+                continue
+
+    return None
+
+
+def encode_prompt(template: str, **kwargs: Any) -> str:
+    template_obj = Template(template)
+    return template_obj.render(**kwargs).strip()

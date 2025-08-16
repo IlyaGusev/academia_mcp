@@ -15,6 +15,7 @@ from .tools.document_qa import document_qa
 from .tools.md_to_pdf import md_to_pdf
 from .tools.web_search import web_search, tavily_web_search, exa_web_search, brave_web_search
 from .tools.visit_webpage import visit_webpage
+from .tools.bitflip import propose_improvement_idea, extract_bitflip_info
 
 load_dotenv()
 
@@ -63,6 +64,8 @@ def run(
         server.add_tool(web_search)
     if os.getenv("OPENROUTER_API_KEY"):
         server.add_tool(document_qa)
+        server.add_tool(propose_improvement_idea)
+        server.add_tool(extract_bitflip_info)
 
     if port is None:
         port = find_free_port()

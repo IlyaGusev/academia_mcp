@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "academia-mcp"
-version = "1.1.3"
+version = "1.1.4"
 description = "MCP server that provides different tools to search for scientific publications"
 readme = "README.md"
 authors = [
@@ -36,6 +36,8 @@ dependencies = [
     "fire>=0.7.0",
     "pytest>=8.4.1",
     "openai>=1.97.1",
+    "jinja2>=3.1.6",
+    "datasets>=4.0.0",
 ]
 
 [project.urls]
