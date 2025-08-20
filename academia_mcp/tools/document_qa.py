@@ -1,18 +1,15 @@
 import os
-from typing import List, Any, Dict, cast
+from typing import List, Any, Dict
 from dotenv import load_dotenv
 
 from pydantic import BaseModel
-from openai import OpenAI
-from openai.types.chat import ChatCompletionMessageParam, ChatCompletionMessage
 
+from academia_mcp.llm import llm_acall
 
 load_dotenv()
 
-SYSTEM_PROMPT = (
-    "You are a helpful assistant that answers questions about documents accurately and concisely."
-)
-PROMPT = """Please answer the following questions based solely on the provided document.
+PROMPT = """You are a helpful assistant that answers questions about documents accurately and concisely.
+Please answer the following questions based solely on the provided document.
 If there is no answer in the document, output "There is no answer in the provided document".
 First cite ALL relevant document fragments, then provide a final answer.
 Answer all given questions one by one.
@@ -40,7 +37,7 @@ class ChatMessage(BaseModel):  # type: ignore
 ChatMessages = List[ChatMessage]
 
 
-def document_qa(
+async def document_qa(
     document: str,
     question: str,
 ) -> str:
@@ -64,33 +61,7 @@ def document_qa(
     assert question and question.strip(), "Please provide non-empty 'question'"
     assert document and document.strip(), "Please provide non-empty 'document'"
 
-    base_url = os.getenv("BASE_URL", "https://openrouter.ai/api/v1")
-    key = os.getenv("OPENROUTER_API_KEY", "")
-    assert key, "Please set OPENROUTER_API_KEY in the environment variables"
     model_name = os.getenv("DOCUMENT_QA_MODEL_NAME", "deepseek/deepseek-chat-v3-0324")
-
-    messages: ChatMessages = [
-        ChatMessage(role="system", content=SYSTEM_PROMPT),
-        ChatMessage(
-            role="user",
-            content=PROMPT.format(question=question, document=document),
-        ),
-    ]
-
-    sdk_messages = [
-        cast(ChatCompletionMessageParam, m.model_dump(exclude_none=True)) for m in messages
-    ]
-    client = OpenAI(base_url=base_url, api_key=key)
-    response: ChatCompletionMessage = (
-        client.chat.completions.create(
-            model=model_name,
-            messages=sdk_messages,
-            temperature=0.0,
-        )
-        .choices[0]
-        .message
-    )
-
-    if response.content is None:
-        raise Exception("Response content is None")
-    return response.content.strip()
+    prompt = PROMPT.format(question=question, document=document)
+    content = await llm_acall(model_name=model_name, prompt=prompt)
+    return content.strip()

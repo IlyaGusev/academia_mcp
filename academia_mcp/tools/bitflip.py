@@ -4,15 +4,24 @@
 import json
 import os
 import random
-from typing import List, Dict, Any
+from typing import List, Optional, Any
 
-from openai import OpenAI
 from pydantic import BaseModel
-from openai.types.chat import ChatCompletionMessage
 from datasets import load_dataset  # type: ignore
 
 from academia_mcp.tools.arxiv_download import arxiv_download
 from academia_mcp.utils import extract_json, encode_prompt
+from academia_mcp.llm import llm_acall
+
+
+class ProposalDataset:
+    dataset: Optional[List[Any]] = None
+
+    @classmethod
+    def get_dataset(cls) -> List[Any]:
+        if cls.dataset is None:
+            cls.dataset = list(load_dataset("UniverseTBD/hypogen-dr1")["train"])
+        return cls.dataset
 
 
 EXTRACT_PROMPT = """
@@ -85,24 +94,98 @@ Try to be as specific as possible.
 Now, please propose a chain of reasoning that leads to an improvement idea for this Bit:
 {{bit}}
 
+{% if additional_context %}Additional context:
+{{additional_context}}{% endif %}
+
+Finalize your idea by providing the idea details:
+- Abstract: An abstract that summarizes the proposal in conference format (approximately 250 words).
+- Experiments: A list of experiments that would be conducted to validate the proposal. Ensure these are simple and feasible. Be specific in exactly how you would test the hypothesis, and detail precise algorithmic changes. Include the evaluation metrics you would use.
+- Risks and limitations: A list of potential risks and limitations of the proposal.
+
 Return only the JSON object in this exact format (no extra text):
 {
     "chain_of_reasoning": "Chain of reasoning that leads to an improvement idea for this Bit. At least 5 sentences.",
     "flip": "Innovative approach or solution, in at least two sentences",
-    "spark": "4-6 word summary"
+    "spark": "4-6 word summary",
+    "abstract": "An abstract that summarizes the proposal in conference format (approximately 250 words).",
+    "experiments": ["...", "..."],
+    "risks_and_limitations": "A list of potential risks and limitations of the proposal."
 }
 """
 
 
-class ChatMessage(BaseModel):  # type: ignore
-    role: str
-    content: str | List[Dict[str, Any]]
+SCORE_PROMPT = """
+You are a highly advanced research assistant.
+You are given a list of research proposals.
+Your task is to score the proposals.
+
+Proposals:
+{% for proposal in proposals %}
+- Proposal ID: {{proposal["proposal_id"]}}
+- Spark: {{proposal["spark"]}}
+- Abstract: {{proposal["abstract"]}}
+- Experiments: {{proposal["experiments"]}}
+- Risks and limitations: {{proposal["risks_and_limitations"]}}
+{% endfor %}
+
+Here are the criteria:
+- "Strengths": A list of strengths of the proposal.
+- "Weaknesses": A list of weaknesses of the proposal.
+- "Novelty": Is the proposal novel? A rating from 1 to 4 (low, medium, high, very high).
+- "Clarity": Is the proposal clear? A rating from 1 to 4 (low, medium, high, very high).
+- "Significance": Is the proposal significant? A rating from 1 to 4 (low, medium, high, very high).
+- "Feasibility": Is the proposal feasible and easy to implement? A rating from 1 to 4 (low, medium, high, very high).
+- "Soundness": Is the proposal sound? A rating from 1 to 4 (poor, fair, good, excellent).
+- "Overall": A rating from 1 to 10 (very strong reject to award quality).
+
+Return only scores for all proposals in this exact format (no extra text):
+[
+    {
+        "proposal_id": 0,
+        "spark": "...",
+        "strengths": ["...", "..."],
+        "weaknesses": ["...", "..."],
+        "novelty": 2,
+        "clarity": 2,
+        "significance": 2,
+        "feasibility": 2,
+        "soundness": 2,
+        "overall": 5
+    },
+    ...
+]
+"""
 
 
-ChatMessages = List[ChatMessage]
+class BitFlipInfo(BaseModel):  # type: ignore
+    bit: str
+    flip: str
+    spark: str
 
 
-def extract_bitflip_info(arxiv_id: str) -> str:
+class Proposal(BaseModel):  # type: ignore
+    proposal_id: Optional[int] = None
+    flip: str
+    spark: str
+    abstract: str
+    experiments: List[str]
+    risks_and_limitations: List[str]
+
+
+class ProposalScores(BaseModel):  # type: ignore
+    proposal_id: int
+    spark: str
+    strengths: List[str]
+    weaknesses: List[str]
+    novelty: int
+    clarity: int
+    significance: int
+    feasibility: int
+    soundness: int
+    overall: int
+
+
+async def extract_bitflip_info(arxiv_id: str) -> str:
     """
     Extracts the Bit-Flip information from the arXiv paper.
 
@@ -121,73 +204,79 @@ def extract_bitflip_info(arxiv_id: str) -> str:
     Args:
         arxiv_id: The arXiv ID of the paper to extract the Bit-Flip information from.
     """
-    base_url = os.getenv("BASE_URL", "https://openrouter.ai/api/v1")
-    key = os.getenv("OPENROUTER_API_KEY", "")
-    assert key, "Please set OPENROUTER_API_KEY in the environment variables"
     model_name = os.getenv("BITFLIP_MODEL_NAME", "deepseek/deepseek-chat-v3-0324")
-
     paper = arxiv_download(arxiv_id)
     abstract = json.loads(paper)["abstract"]
     prompt = encode_prompt(EXTRACT_PROMPT, abstract=abstract)
-    messages: ChatMessages = [
-        ChatMessage(role="user", content=prompt),
-    ]
-    client = OpenAI(base_url=base_url, api_key=key)
-    response: ChatCompletionMessage = (
-        client.chat.completions.create(
-            model=model_name,
-            messages=messages,
-            temperature=0.0,
-        )
-        .choices[0]
-        .message
-    )
-    assert response.content, "Response content is None"
-    result = extract_json(response.content)
-    return json.dumps(result, ensure_ascii=False)
+    content = await llm_acall(model_name=model_name, prompt=prompt)
+    result = extract_json(content)
+    bitflip_info: BitFlipInfo = BitFlipInfo.model_validate(result)
+    return str(bitflip_info.model_dump_json())
 
 
-def propose_improvement_idea(arxiv_id: str) -> str:
+async def generate_research_proposal(bit: str, additional_context: str = "") -> str:
     """
-    Proposes an improvement idea for the arXiv paper.
+    Proposes an improvement idea for the Bit.
 
-    Returns a JSON object in this format:
+    Args:
+        bit: The Bit to propose an improvement idea for. The bit is a technical limitation or conventional approach of some paper.
+        additional_context: Additional context to use when proposing the improvement idea.
+
+    Returns a JSON string with a research proposal in this format:
     {
-        "chain_of_reasoning": "Chain of reasoning that leads to an improvement idea.",
-        "flip": "Innovative approach or solution",
-        "spark": "4-6 word summary"
+        "proposal_id": ...,
+        "flip": "Innovative approach or solution, in at least two sentences",
+        "spark": "4-6 word summary",
+        "abstract": "An abstract that summarizes the proposal in conference format (approximately 250 words).",
+        "experiments": ["...", "..."],
+        "risks_and_limitations": "A list of potential risks and limitations of the proposal."
     }
+    Use `json.loads` to deserialize the result if you want to get specific fields.
+    """
+    model_name = os.getenv("BITFLIP_MODEL_NAME", "deepseek/deepseek-chat-v3-0324")
+    examples = ProposalDataset.get_dataset()[:]
+    examples = random.choices(examples, k=4)
+
+    prompt = encode_prompt(
+        IMPROVEMENT_PROMPT, bit=bit, examples=examples, additional_context=additional_context
+    )
+    content = await llm_acall(model_name=model_name, prompt=prompt)
+    result = extract_json(content)
+    proposal: Proposal = Proposal.model_validate(result)
+    proposal.proposal_id = random.randint(0, 1000000)
+    return str(proposal.model_dump_json())
+
+
+async def score_research_proposals(proposals: List[str]) -> str:
+    """
+    Scores a list of research proposals.
+    Use proposals obtained with the `generate_research_proposal` tool.
+
+    Returns a JSON string with a list of scores in this format:
+    [
+        {
+            "proposal_id": 0,
+            "spark": "...",
+            "strengths": ["...", "..."],
+            "weaknesses": ["...", "..."],
+            "novelty": 2,
+            "clarity": 2,
+            "significance": 2,
+            "feasibility": 2,
+            "soundness": 2,
+            "overall": 5
+        },
+        ...
+    ]
     Use `json.loads` to deserialize the result if you want to get specific fields.
 
     Args:
-        arxiv_id: The arXiv ID of the paper to propose an improvement idea for.
+        proposals: A list of JSON strings with research proposals.
     """
-    base_url = os.getenv("BASE_URL", "https://openrouter.ai/api/v1")
-    key = os.getenv("OPENROUTER_API_KEY", "")
-    assert key, "Please set OPENROUTER_API_KEY in the environment variables"
     model_name = os.getenv("BITFLIP_MODEL_NAME", "deepseek/deepseek-chat-v3-0324")
-
-    bitflip_info = json.loads(extract_bitflip_info(arxiv_id))
-    bit = bitflip_info["bit"]
-
-    examples = list(load_dataset("UniverseTBD/hypogen-dr1")["train"])
-    random.shuffle(examples)
-    examples = examples[:4]
-
-    prompt = encode_prompt(IMPROVEMENT_PROMPT, bit=bit, examples=examples)
-    messages: ChatMessages = [
-        ChatMessage(role="user", content=prompt),
-    ]
-    client = OpenAI(base_url=base_url, api_key=key)
-    response: ChatCompletionMessage = (
-        client.chat.completions.create(
-            model=model_name,
-            messages=messages,
-            temperature=0.0,
-        )
-        .choices[0]
-        .message
-    )
-    assert response.content, "Response content is None"
-    result = extract_json(response.content)
-    return json.dumps(result, ensure_ascii=False)
+    proposals = [Proposal.model_validate_json(proposal) for proposal in proposals]
+    prompt = encode_prompt(SCORE_PROMPT, proposals=proposals)
+    content = await llm_acall(model_name=model_name, prompt=prompt)
+    scores = extract_json(content)
+    final_scores = [ProposalScores.model_validate(score) for score in scores]
+    return json.dumps([s.model_dump() for s in final_scores], ensure_ascii=False)

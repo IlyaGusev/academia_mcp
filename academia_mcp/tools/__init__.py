@@ -7,7 +7,7 @@ from .document_qa import document_qa
 from .md_to_pdf import md_to_pdf
 from .web_search import web_search, tavily_web_search, exa_web_search, brave_web_search
 from .visit_webpage import visit_webpage
-from .bitflip import propose_improvement_idea, extract_bitflip_info
+from .bitflip import extract_bitflip_info, generate_research_proposal, score_research_proposals
 
 
 __all__ = [
@@ -24,6 +24,7 @@ __all__ = [
     "exa_web_search",
     "brave_web_search",
     "visit_webpage",
-    "propose_improvement_idea",
     "extract_bitflip_info",
+    "generate_research_proposal",
+    "score_research_proposals",
 ]
