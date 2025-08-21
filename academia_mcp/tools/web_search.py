@@ -28,16 +28,31 @@ def web_search(
         limit: The maximum number of items to return. 20 by default, maximum 25.
         provider: The provider to use. "exa", "tavily" or "brave". "tavily" by default.
     """
-    assert provider in (
-        "exa",
-        "tavily",
-        "brave",
-    ), "Error: provider must be either 'exa', 'tavily' or 'brave'"
+    providers = ("tavily", "brave", "exa")
+    assert provider in providers, "Error: provider must be either 'exa', 'tavily' or 'brave'"
+
+    is_tavily_available = os.getenv("TAVILY_API_KEY") is not None
+    is_exa_available = os.getenv("EXA_API_KEY") is not None
+    is_brave_available = os.getenv("BRAVE_API_KEY") is not None
+    assert is_tavily_available or is_exa_available or is_brave_available
+    availability = {
+        "tavily": is_tavily_available,
+        "brave": is_brave_available,
+        "exa": is_exa_available,
+    }
+
+    if not availability[provider]:
+        for p in providers:
+            if availability[p]:
+                provider = p
+                break
 
     if provider == "exa":
         return exa_web_search(query, limit)
-    if provider == "brave":
+    elif provider == "brave":
         return brave_web_search(query, limit)
+
+    assert provider == "tavily"
     return tavily_web_search(query, limit)
 
 
