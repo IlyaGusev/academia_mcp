@@ -1,4 +1,5 @@
 import os
+import json
 from typing import List, Any, Dict
 from dotenv import load_dotenv
 
@@ -38,7 +39,7 @@ ChatMessages = List[ChatMessage]
 
 
 async def document_qa(
-    document: str,
+    document: str | Dict[str, Any],
     question: str,
 ) -> str:
     """
@@ -55,10 +56,13 @@ async def document_qa(
     Returns an answer to all questions based on the document content.
 
     Args:
-    question: Question (or questions) to be answered about the document.
-    document: The full text of the document to analyze.
+        question: Question (or questions) to be answered about the document.
+        document: The full text of the document to analyze.
     """
     assert question and question.strip(), "Please provide non-empty 'question'"
+    if isinstance(document, dict):
+        document = json.dumps(document)
+
     assert document and document.strip(), "Please provide non-empty 'document'"
 
     model_name = os.getenv("DOCUMENT_QA_MODEL_NAME", "deepseek/deepseek-chat-v3-0324")
