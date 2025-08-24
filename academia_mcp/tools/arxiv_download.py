@@ -35,6 +35,8 @@ def parse_pdf_file(pdf_path: Path) -> List[str]:
     for page_number, page in enumerate(reader.pages, start=1):
         try:
             text = page.extract_text()
+            if not text:
+                continue
             prefix = f"## Page {page_number}\n\n"
             pages.append(prefix + text)
         except Exception:

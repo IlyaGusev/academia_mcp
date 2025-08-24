@@ -13,10 +13,11 @@ def post_with_retries(
     api_key: Optional[str] = None,
     timeout: int = 30,
     num_retries: int = 3,
+    backoff_factor: float = 3.0,
 ) -> requests.Response:
     retry_strategy = Retry(
         total=num_retries,
-        backoff_factor=3,
+        backoff_factor=backoff_factor,
         status_forcelist=[429, 500, 502, 503, 504],
         allowed_methods=["POST"],
     )
@@ -24,6 +25,7 @@ def post_with_retries(
     session = requests.Session()
     adapter = requests.adapters.HTTPAdapter(max_retries=retry_strategy)
     session.mount("https://", adapter)
+    session.mount("http://", adapter)
 
     headers = {
         "x-api-key": api_key,
@@ -42,11 +44,12 @@ def get_with_retries(
     api_key: Optional[str] = None,
     timeout: int = 30,
     num_retries: int = 3,
+    backoff_factor: float = 3.0,
     params: Optional[Dict[str, Any]] = None,
 ) -> requests.Response:
     retry_strategy = Retry(
         total=num_retries,
-        backoff_factor=30,
+        backoff_factor=backoff_factor,
         status_forcelist=[429, 500, 502, 503, 504],
         allowed_methods=["GET"],
     )
@@ -54,6 +57,7 @@ def get_with_retries(
     session = requests.Session()
     adapter = requests.adapters.HTTPAdapter(max_retries=retry_strategy)
     session.mount("https://", adapter)
+    session.mount("http://", adapter)
 
     headers = {}
     if api_key:
@@ -145,3 +149,19 @@ def extract_json(text: str) -> Any:
 def encode_prompt(template: str, **kwargs: Any) -> str:
     template_obj = Template(template)
     return template_obj.render(**kwargs).strip()
+
+
+def truncate_content(
+    content: str,
+    max_length: int,
+) -> str:
+    disclaimer = (
+        f"\n\n..._This content has been truncated to stay below {max_length} characters_...\n\n"
+    )
+    half_length = max_length // 2
+    if len(content) <= max_length:
+        return content
+
+    prefix = content[:half_length]
+    suffix = content[-half_length:]
+    return prefix + disclaimer + suffix

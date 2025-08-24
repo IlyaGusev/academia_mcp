@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 
 from academia_mcp.llm import llm_acall
+from academia_mcp.utils import truncate_content
 
 load_dotenv()
 
@@ -62,8 +63,10 @@ async def document_qa(
     assert question and question.strip(), "Please provide non-empty 'question'"
     if isinstance(document, dict):
         document = json.dumps(document)
-
     assert document and document.strip(), "Please provide non-empty 'document'"
+
+    question = truncate_content(question, 10000)
+    document = truncate_content(document, 200000)
 
     model_name = os.getenv("DOCUMENT_QA_MODEL_NAME", "deepseek/deepseek-chat-v3-0324")
     prompt = PROMPT.format(question=question, document=document)

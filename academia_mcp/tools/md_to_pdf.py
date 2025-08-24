@@ -367,6 +367,10 @@ def md_to_pdf(markdown_text: str, output_filename: str = "output") -> str:
     with open(tex_file_path, "w", encoding="utf-8") as f:
         f.write(latex_code)
 
+    if shutil.which("pdflatex") is None:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        return "pdflatex is not installed or not found in PATH."
+
     try:
         subprocess.run(
             [
@@ -383,12 +387,14 @@ def md_to_pdf(markdown_text: str, output_filename: str = "output") -> str:
         )
 
     except subprocess.TimeoutExpired:
+        shutil.rmtree(temp_dir, ignore_errors=True)
         return "Compilation timed out after 30 seconds"
     except subprocess.CalledProcessError as e:
         error_msg = e.stdout.decode("utf-8")
         error_lines = [
             line for line in error_msg.split("\n") if "error" in line.lower() or "!" in line
         ]
+        shutil.rmtree(temp_dir, ignore_errors=True)
         if error_lines:
             return "Compilation failed. LaTeX errors:\n" + "\n".join(error_lines)
         return f"Compilation failed. Full LaTeX output:\n{error_msg}"
@@ -401,4 +407,5 @@ def md_to_pdf(markdown_text: str, output_filename: str = "output") -> str:
         shutil.rmtree(temp_dir, ignore_errors=True)
         return f"Compilation successful! PDF file saved as {output_filename}.pdf"
 
+    shutil.rmtree(temp_dir, ignore_errors=True)
     return "Compilation completed, but PDF file was not created. Check LaTeX code for errors."

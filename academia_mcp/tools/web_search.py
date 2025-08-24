@@ -17,7 +17,8 @@ def web_search(
     provider: Optional[str] = "tavily",
 ) -> str:
     """
-    Search the web using Exa Search or Tavily and return normalized results.
+    Search the web using Exa Search, Brave Search or Tavily and return normalized results.
+    If the specified provider is not available, the function will try to use the next available provider.
 
     Returns a JSON object serialized to a string. The structure is: {"results": [...]}
     Every item in the "results" has at least the following fields: ("title", "url")
@@ -47,13 +48,15 @@ def web_search(
                 provider = p
                 break
 
+    result = {}
     if provider == "exa":
-        return exa_web_search(query, limit)
+        result = json.loads(exa_web_search(query, limit))
     elif provider == "brave":
-        return brave_web_search(query, limit)
-
-    assert provider == "tavily"
-    return tavily_web_search(query, limit)
+        result = json.loads(brave_web_search(query, limit))
+    elif provider == "tavily":
+        result = json.loads(tavily_web_search(query, limit))
+    result["search_provider"] = provider
+    return json.dumps(result, ensure_ascii=False)
 
 
 def tavily_web_search(query: str, limit: Optional[int] = 20) -> str:

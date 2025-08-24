@@ -33,7 +33,7 @@ def find_free_port() -> int:
                 return port
         except Exception:
             continue
-    return 5000
+    raise RuntimeError("No free port in range 5000-6000 found")
 
 
 def run(
@@ -42,6 +42,8 @@ def run(
     mount_path: str = "/",
     streamable_http_path: str = "/mcp",
     transport: Literal["stdio", "sse", "streamable-http"] = "streamable-http",
+    disable_web_search_tools: bool = False,
+    disable_llm_tools: bool = False,
 ) -> None:
     server = FastMCP(
         "Academia MCP",
@@ -58,19 +60,21 @@ def run(
     server.add_tool(anthology_search)
     server.add_tool(md_to_pdf)
     server.add_tool(visit_webpage)
-    server.add_tool(extract_bitflip_info)
-    server.add_tool(generate_research_proposal)
-    server.add_tool(score_research_proposals)
 
-    if os.getenv("TAVILY_API_KEY"):
-        server.add_tool(tavily_web_search)
-    if os.getenv("EXA_API_KEY"):
-        server.add_tool(exa_web_search)
-    if os.getenv("BRAVE_API_KEY"):
-        server.add_tool(brave_web_search)
-    if os.getenv("EXA_API_KEY") or os.getenv("BRAVE_API_KEY") or os.getenv("TAVILY_API_KEY"):
-        server.add_tool(web_search)
-    if os.getenv("OPENROUTER_API_KEY"):
+    if not disable_web_search_tools:
+        if os.getenv("TAVILY_API_KEY"):
+            server.add_tool(tavily_web_search)
+        if os.getenv("EXA_API_KEY"):
+            server.add_tool(exa_web_search)
+        if os.getenv("BRAVE_API_KEY"):
+            server.add_tool(brave_web_search)
+        if os.getenv("EXA_API_KEY") or os.getenv("BRAVE_API_KEY") or os.getenv("TAVILY_API_KEY"):
+            server.add_tool(web_search)
+
+    if not disable_llm_tools and os.getenv("OPENROUTER_API_KEY"):
+        server.add_tool(extract_bitflip_info)
+        server.add_tool(generate_research_proposal)
+        server.add_tool(score_research_proposals)
         server.add_tool(document_qa)
 
     if port is None:

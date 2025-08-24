@@ -34,20 +34,13 @@ def _format_authors(authors: List[Any]) -> str:
     return result
 
 
-def _format_date(date_str: str) -> str:
-    try:
-        return datetime.strptime(date_str, "%Y").strftime("%B %d, %Y")
-    except ValueError:
-        return date_str
-
-
 def _clean_entry(entry: Any) -> Dict[str, Any]:
     return {
         "id": entry.full_id,
         "title": _format_text_field(entry.title.as_text()),
         "authors": _format_authors(entry.authors),
         "abstract": (_format_text_field(entry.abstract.as_text()) if entry.abstract else ""),
-        "published": _format_date(entry.year),
+        "published_year": entry.year,
         "categories": ", ".join(entry.venue_ids),
         "comment": entry.note if entry.note else "",
         "url": entry.pdf.url if entry.pdf else "",
