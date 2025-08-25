@@ -58,7 +58,11 @@ def compile_latex_from_file(
         output_filename: The path to the output pdf file.
         timeout: The timeout for the compilation. 60 seconds by default.
     """
-    with open(input_filename, "r", encoding="utf-8") as file:
+    input_filename_path = Path(input_filename)
+    if not input_filename_path.exists():
+        input_filename_path = Path(get_workspace_dir()) / input_filename
+    assert input_filename_path.exists(), f"Input file {input_filename} does not exist"
+    with open(input_filename_path, "r", encoding="utf-8") as file:
         latex_code = file.read()
     return compile_latex_from_str(latex_code, output_filename, timeout)
 
