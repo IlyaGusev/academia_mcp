@@ -5,6 +5,7 @@ from pathlib import Path
 DIR_PATH = Path(__file__).parent
 ROOT_PATH = DIR_PATH.parent
 DEFAULT_WORKSPACE_DIR_PATH: Path = DIR_PATH / "workdir"
+DEFAULT_LATEX_TEMPLATES_DIR_PATH: Path = DIR_PATH / "latex_templates"
 
 
 class WorkspaceDirectory:
