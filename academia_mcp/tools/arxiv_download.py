@@ -12,36 +12,9 @@ from dataclasses import dataclass, field
 import requests
 import bs4
 from markdownify import MarkdownConverter  # type: ignore
-from pypdf import PdfReader
 
 from academia_mcp.utils import get_with_retries
-
-
-def download_pdf(url: str, output_path: Path) -> None:
-    response = get_with_retries(url)
-    response.raise_for_status()
-    content_type = response.headers.get("content-type")
-    assert content_type
-    assert "application/pdf" in content_type.lower()
-    with open(output_path.resolve(), "wb") as fp:
-        fp.write(response.content)
-
-
-def parse_pdf_file(pdf_path: Path) -> List[str]:
-    # Why not Marker? Because it is too heavy.
-    reader = PdfReader(str(pdf_path.resolve()))
-
-    pages = []
-    for page_number, page in enumerate(reader.pages, start=1):
-        try:
-            text = page.extract_text()
-            if not text:
-                continue
-            prefix = f"## Page {page_number}\n\n"
-            pages.append(prefix + text)
-        except Exception:
-            continue
-    return pages
+from academia_mcp.pdf import parse_pdf_file, download_pdf
 
 
 HTML_URL = "https://arxiv.org/html/{paper_id}"

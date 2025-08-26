@@ -11,7 +11,7 @@ from datasets import load_dataset  # type: ignore
 
 from academia_mcp.tools.arxiv_download import arxiv_download
 from academia_mcp.utils import extract_json, encode_prompt
-from academia_mcp.llm import llm_acall
+from academia_mcp.llm import llm_acall, ChatMessage
 
 
 class ProposalDataset:
@@ -208,7 +208,9 @@ async def extract_bitflip_info(arxiv_id: str) -> str:
     paper = arxiv_download(arxiv_id)
     abstract = json.loads(paper)["abstract"]
     prompt = encode_prompt(EXTRACT_PROMPT, abstract=abstract)
-    content = await llm_acall(model_name=model_name, prompt=prompt)
+    content = await llm_acall(
+        model_name=model_name, messages=[ChatMessage(role="user", content=prompt)]
+    )
     result = extract_json(content)
     bitflip_info: BitFlipInfo = BitFlipInfo.model_validate(result)
     return str(bitflip_info.model_dump_json())
@@ -240,7 +242,9 @@ async def generate_research_proposal(bit: str, additional_context: str = "") -> 
     prompt = encode_prompt(
         IMPROVEMENT_PROMPT, bit=bit, examples=examples, additional_context=additional_context
     )
-    content = await llm_acall(model_name=model_name, prompt=prompt)
+    content = await llm_acall(
+        model_name=model_name, messages=[ChatMessage(role="user", content=prompt)]
+    )
     result = extract_json(content)
     proposal: Proposal = Proposal.model_validate(result)
     proposal.proposal_id = random.randint(0, 1000000)
@@ -276,7 +280,9 @@ async def score_research_proposals(proposals: List[str]) -> str:
     model_name = os.getenv("BITFLIP_MODEL_NAME", "deepseek/deepseek-chat-v3-0324")
     proposals = [Proposal.model_validate_json(proposal) for proposal in proposals]
     prompt = encode_prompt(SCORE_PROMPT, proposals=proposals)
-    content = await llm_acall(model_name=model_name, prompt=prompt)
+    content = await llm_acall(
+        model_name=model_name, messages=[ChatMessage(role="user", content=prompt)]
+    )
     scores = extract_json(content)
     final_scores = [ProposalScores.model_validate(score) for score in scores]
     return json.dumps([s.model_dump() for s in final_scores], ensure_ascii=False)

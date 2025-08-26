@@ -36,6 +36,7 @@ def test_latex_compile_latex_from_file() -> None:
         temp_dir_path = Path(temp_dir)
         tex_filename = "temp.tex"
         tex_file_path = temp_dir_path / tex_filename
+        pdf_filename = "test.pdf"
         tex_file_path.write_text(template["template"], encoding="utf-8")
-        result = compile_latex_from_file(str(tex_file_path), "test.pdf")
+        result = compile_latex_from_file(str(tex_file_path), pdf_filename)
     assert "Compilation successful" in result

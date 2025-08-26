@@ -14,14 +14,11 @@ class ChatMessage(BaseModel):  # type: ignore
 ChatMessages = List[ChatMessage]
 
 
-async def llm_acall(model_name: str, prompt: str) -> str:
+async def llm_acall(model_name: str, messages: ChatMessages) -> str:
     key = os.getenv("OPENROUTER_API_KEY", "")
     assert key, "Please set OPENROUTER_API_KEY in the environment variables"
     base_url = os.getenv("BASE_URL", "https://openrouter.ai/api/v1")
 
-    messages: ChatMessages = [
-        ChatMessage(role="user", content=prompt),
-    ]
     client = AsyncOpenAI(base_url=base_url, api_key=key)
     response: ChatCompletionMessage = (
         (

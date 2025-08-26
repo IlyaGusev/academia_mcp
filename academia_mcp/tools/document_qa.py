@@ -70,5 +70,7 @@ async def document_qa(
 
     model_name = os.getenv("DOCUMENT_QA_MODEL_NAME", "deepseek/deepseek-chat-v3-0324")
     prompt = PROMPT.format(question=question, document=document)
-    content = await llm_acall(model_name=model_name, prompt=prompt)
+    content = await llm_acall(
+        model_name=model_name, messages=[ChatMessage(role="user", content=prompt)]
+    )
     return content.strip()
