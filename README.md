@@ -1,5 +1,10 @@
 # Academia MCP
 
+[![PyPI](https://img.shields.io/pypi/v/codearkt?label=PyPI%20package)](https://pypi.org/project/academia-mcp/)
+[![CI](https://github.com/IlyaGusev/academia_mcp/actions/workflows/python.yml/badge.svg)](https://github.com/IlyaGusev/academia_mcp/actions/workflows/python.yml)
+[![License](https://img.shields.io/github/license/IlyaGusev/academia_mcp)](LICENSE)
+[![smithery badge](https://smithery.ai/badge/@IlyaGusev/academia_mcp)](https://smithery.ai/server/@IlyaGusev/academia_mcp)
+
 A collection of MCP tools related to the search of scientific papers:
 - ArXiv search and download
 - ACL Anthology search
