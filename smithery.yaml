@@ -7,5 +7,5 @@ startCommand:
     properties: {}
   commandFunction:
     |-
-    (config) => ({ command: 'python', args: ['-m', 'academia_mcp'] })
+    (config) => ({ command: 'python', args: ['-m', 'academia_mcp', '--transport', 'stdio'] })
  exampleConfig: {}
