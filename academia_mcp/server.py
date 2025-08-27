@@ -86,7 +86,9 @@ def run(
         server.add_tool(document_qa)
 
     if port is None:
-        port = find_free_port()
+        port = int(os.environ.get("PORT", -1))
+        if port == -1:
+            port = find_free_port()
     server.settings.port = port
     server.settings.host = host
     server.run(transport=transport)
