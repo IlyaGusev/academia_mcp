@@ -25,7 +25,7 @@ from .tools.bitflip import (
     generate_research_proposal,
     score_research_proposals,
 )
-from .tools.review import review_pdf
+from .tools.review import review_pdf_paper, download_pdf_paper
 
 
 load_dotenv()
@@ -69,6 +69,7 @@ def run(
     server.add_tool(get_latex_template)
     server.add_tool(get_latex_templates_list)
     server.add_tool(visit_webpage)
+    server.add_tool(download_pdf_paper)
 
     if not disable_web_search_tools:
         if os.getenv("TAVILY_API_KEY"):
@@ -85,7 +86,7 @@ def run(
         server.add_tool(generate_research_proposal)
         server.add_tool(score_research_proposals)
         server.add_tool(document_qa)
-        server.add_tool(review_pdf)
+        server.add_tool(review_pdf_paper)
 
     if port is None:
         port = int(os.environ.get("PORT", -1))
