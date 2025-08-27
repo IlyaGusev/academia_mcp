@@ -25,6 +25,7 @@ from .tools.bitflip import (
     generate_research_proposal,
     score_research_proposals,
 )
+from .tools.review import review_pdf
 
 
 load_dotenv()
@@ -84,6 +85,7 @@ def run(
         server.add_tool(generate_research_proposal)
         server.add_tool(score_research_proposals)
         server.add_tool(document_qa)
+        server.add_tool(review_pdf)
 
     if port is None:
         port = int(os.environ.get("PORT", -1))
