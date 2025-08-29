@@ -121,11 +121,9 @@ Your task is to score the proposals.
 
 Proposals:
 {% for proposal in proposals %}
-- Proposal ID: {{proposal["proposal_id"]}}
-- Spark: {{proposal["spark"]}}
-- Abstract: {{proposal["abstract"]}}
-- Experiments: {{proposal["experiments"]}}
-- Risks and limitations: {{proposal["risks_and_limitations"]}}
+----
+{{proposal}}
+----
 {% endfor %}
 
 Here are the criteria:
@@ -278,7 +276,6 @@ async def score_research_proposals(proposals: List[str]) -> str:
         proposals: A list of JSON strings with research proposals.
     """
     model_name = os.getenv("BITFLIP_MODEL_NAME", "deepseek/deepseek-chat-v3-0324")
-    proposals = [Proposal.model_validate_json(proposal) for proposal in proposals]
     prompt = encode_prompt(SCORE_PROMPT, proposals=proposals)
     content = await llm_acall(
         model_name=model_name, messages=[ChatMessage(role="user", content=prompt)]
