@@ -4,7 +4,7 @@
 import json
 import os
 import random
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Dict
 
 from pydantic import BaseModel
 from datasets import load_dataset  # type: ignore
@@ -249,7 +249,7 @@ async def generate_research_proposal(bit: str, additional_context: str = "") -> 
     return str(proposal.model_dump_json())
 
 
-async def score_research_proposals(proposals: List[str]) -> str:
+async def score_research_proposals(proposals: List[str | Dict[str, Any] | Any]) -> str:
     """
     Scores a list of research proposals.
     Use proposals obtained with the `generate_research_proposal` tool.
@@ -276,7 +276,7 @@ async def score_research_proposals(proposals: List[str]) -> str:
         proposals: A list of JSON strings with research proposals.
     """
     model_name = os.getenv("BITFLIP_MODEL_NAME", "deepseek/deepseek-chat-v3-0324")
-    prompt = encode_prompt(SCORE_PROMPT, proposals=proposals)
+    prompt = encode_prompt(SCORE_PROMPT, proposals=[str(p) for p in proposals])
     content = await llm_acall(
         model_name=model_name, messages=[ChatMessage(role="user", content=prompt)]
     )
