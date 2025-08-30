@@ -161,28 +161,6 @@ class BitFlipInfo(BaseModel):  # type: ignore
     spark: str
 
 
-class Proposal(BaseModel):  # type: ignore
-    proposal_id: Optional[int] = None
-    flip: str
-    spark: str
-    abstract: str
-    experiments: List[str]
-    risks_and_limitations: List[str]
-
-
-class ProposalScores(BaseModel):  # type: ignore
-    proposal_id: int
-    spark: str
-    strengths: List[str]
-    weaknesses: List[str]
-    novelty: int
-    clarity: int
-    significance: int
-    feasibility: int
-    soundness: int
-    overall: int
-
-
 async def extract_bitflip_info(arxiv_id: str) -> str:
     """
     Extracts the Bit-Flip information from the arXiv paper.
@@ -244,9 +222,8 @@ async def generate_research_proposal(bit: str, additional_context: str = "") -> 
         model_name=model_name, messages=[ChatMessage(role="user", content=prompt)]
     )
     result = extract_json(content)
-    proposal: Proposal = Proposal.model_validate(result)
-    proposal.proposal_id = random.randint(0, 1000000)
-    return str(proposal.model_dump_json())
+    result["proposal_id"] = random.randint(0, 1000000)
+    return json.dumps(result, ensure_ascii=False)
 
 
 async def score_research_proposals(proposals: str | List[str | Dict[str, Any] | Any]) -> str:
@@ -284,5 +261,4 @@ async def score_research_proposals(proposals: str | List[str | Dict[str, Any] | 
         model_name=model_name, messages=[ChatMessage(role="user", content=prompt)]
     )
     scores = extract_json(content)
-    final_scores = [ProposalScores.model_validate(score) for score in scores]
-    return json.dumps([s.model_dump() for s in final_scores], ensure_ascii=False)
+    return json.dumps(scores, ensure_ascii=False)
