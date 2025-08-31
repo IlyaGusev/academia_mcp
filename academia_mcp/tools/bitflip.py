@@ -74,22 +74,36 @@ Return only the JSON object in this exact format (no extra text):
 }
 """
 
-IMPROVEMENT_PROMPT = """
-You are a highly advanced research assistant.
-You specialize in hypothesis generation and identifying innovative ideas.
+SYSTEM_IMPROVEMENT_PROMPT = """
+You are a brilliant rogue researcher who has just discovered a secret laboratory hidden behind a bookshelf.
+This lab doesn't follow the boring rules of conventional academia: here, the wildest ideas become breakthrough innovations.
 
-You are given a Bit, which is a technical limitation or conventional approach of some paper.
-Your task is to propose an improvement idea for the Bit called Flip and summarize it in a Spark.
-Do not propose any human annotations or human-in-the-loop, the idea should be automatically verifiable.
-Try to be as specific as possible.
+You've spent years watching researchers play it safe with incremental improvements and mind-numbing iterations.
+But tonight you're ready to unleash scientific chaos.
+"""
+
+IMPROVEMENT_PROMPT = """
+You've been handed a Bit: a technical limitation, constraint, or conventional approach from some stuffy research paper.
+This Bit represents everything predictable and safe about current methods.
+Your task: Shatter it completely.
+Create a Flip: wildly unconventional improvement that would make traditional researchers choke on their coffee.
+Then capture its essence in a Spark: brilliant summary that crackles with innovation.
+
+- Go Beyond Novel: Your idea should feel like it came from a parallel universe where the laws of conventional thinking don't apply.
+- Make It Automatically Verifiable: No human babysitters allowed. Your idea must prove itself through pure computational audacity.
+- Be Surgically Specific: Vague hand-waving is for amateur rebels. Describe exactly how your mad science would work.
+- Feasibility is the Key: Make it simple and executable. Try to make it reproducible.
+- Channel Your Inner Contrarian: What would happen if you took the exact opposite approach? What if you turned the problem inside-out, upside-down, or into a completely different dimension?
 
 {% for example in examples %}
-## Example {{loop.index}}
+## Example {{loop.index}} of boring research
 - Bit: {{example["bit"]}}
 - Chain of reasoning: {{example["chain_of_reasoning"]}}
 - Flip: {{example["flip"]}}
 - Spark: {{example["spark"]}}
 {% endfor %}
+
+Those examples are boring, your ideas should not be like that.
 
 Now, please propose a chain of reasoning that leads to an improvement idea for this Bit:
 {{bit}}
@@ -99,18 +113,25 @@ Now, please propose a chain of reasoning that leads to an improvement idea for t
 
 Finalize your idea by providing the idea details:
 - Abstract: An abstract that summarizes the proposal in conference format (approximately 250 words).
-- Experiments: A list of experiments that would be conducted to validate the proposal. Ensure these are simple and feasible. Be specific in exactly how you would test the hypothesis, and detail precise algorithmic changes. Include the evaluation metrics you would use.
+- Experiments: A list of experiments that would be conducted to validate the proposal.
+Ensure these are simple and feasible. Be specific in exactly how you would test the hypothesis, and detail precise algorithmic changes.
+Include the evaluation metrics you would use.
 - Risks and limitations: A list of potential risks and limitations of the proposal.
 
-Return only the JSON object in this exact format (no extra text):
-{
-    "chain_of_reasoning": "Chain of reasoning that leads to an improvement idea for this Bit. At least 5 sentences.",
-    "flip": "Innovative approach or solution, in at least two sentences",
-    "spark": "4-6 word summary",
-    "abstract": "An abstract that summarizes the proposal in conference format (approximately 250 words).",
-    "experiments": ["...", "..."],
-    "risks_and_limitations": "A list of potential risks and limitations of the proposal."
-}
+Generate {{num_proposals}} proposals.
+
+Return only the JSON list of proposals in this exact format:
+[
+    {
+        "chain_of_reasoning": "Chain of reasoning that leads to an improvement idea for this Bit. At least 5 sentences.",
+        "flip": "Your wildest, craziest, most innovative idea, in at least two sentences",
+        "spark": "4-6 word summary",
+        "abstract": "An abstract that summarizes the proposal in conference format (approximately 250 words).",
+        "experiments": ["...", "..."],
+        "risks_and_limitations": "A list of potential risks and limitations of the proposal."
+    },
+    ...
+]
 """
 
 
@@ -185,44 +206,64 @@ async def extract_bitflip_info(arxiv_id: str) -> str:
     abstract = json.loads(paper)["abstract"]
     prompt = encode_prompt(EXTRACT_PROMPT, abstract=abstract)
     content = await llm_acall(
-        model_name=model_name, messages=[ChatMessage(role="user", content=prompt)]
+        model_name=model_name,
+        messages=[ChatMessage(role="user", content=prompt)],
+        temperature=0.0,
     )
     result = extract_json(content)
     bitflip_info: BitFlipInfo = BitFlipInfo.model_validate(result)
     return str(bitflip_info.model_dump_json())
 
 
-async def generate_research_proposal(bit: str, additional_context: str = "") -> str:
+async def generate_research_proposals(
+    bit: str, num_proposals: int = 3, additional_context: str = ""
+) -> str:
     """
-    Proposes an improvement idea for the Bit.
+    Proposes improvement ideas for the Bit.
 
     Args:
-        bit: The Bit to propose an improvement idea for. The bit is a technical limitation or conventional approach of some paper.
+        bit: The Bit to propose improvement ideas for. The bit is a technical limitation or conventional approach of some paper.
+        num_proposals: The number of proposals to generate.
         additional_context: Additional context to use when proposing the improvement idea.
 
     Returns a JSON string with a research proposal in this format:
-    {
-        "proposal_id": ...,
-        "flip": "Innovative approach or solution, in at least two sentences",
-        "spark": "4-6 word summary",
-        "abstract": "An abstract that summarizes the proposal in conference format (approximately 250 words).",
-        "experiments": ["...", "..."],
-        "risks_and_limitations": "A list of potential risks and limitations of the proposal."
-    }
-    Use `json.loads` to deserialize the result if you want to get specific fields.
+    [
+        {
+            "proposal_id": ...,
+            "flip": "Innovative approach or solution, in at least two sentences",
+            "spark": "4-6 word summary",
+            "abstract": "An abstract that summarizes the proposal in conference format (approximately 250 words).",
+            "experiments": ["...", "..."],
+            "risks_and_limitations": "A list of potential risks and limitations of the proposal."
+        },
+        ...
+    ]
+    Use `json.loads` to deserialize the result if you want to get specific items.
     """
     model_name = os.getenv("BITFLIP_MODEL_NAME", "deepseek/deepseek-chat-v3-0324")
+    max_completion_tokens = int(os.getenv("BITFLIP_MAX_COMPLETION_TOKENS", 16384))
     examples = ProposalDataset.get_dataset()[:]
-    examples = random.choices(examples, k=4)
+    examples = random.choices(examples, k=2)
 
     prompt = encode_prompt(
-        IMPROVEMENT_PROMPT, bit=bit, examples=examples, additional_context=additional_context
+        IMPROVEMENT_PROMPT,
+        bit=bit,
+        examples=examples,
+        num_proposals=num_proposals,
+        additional_context=additional_context,
     )
     content = await llm_acall(
-        model_name=model_name, messages=[ChatMessage(role="user", content=prompt)]
+        model_name=model_name,
+        messages=[
+            ChatMessage(role="system", content=SYSTEM_IMPROVEMENT_PROMPT),
+            ChatMessage(role="user", content=prompt),
+        ],
+        max_completion_tokens=max_completion_tokens,
+        temperature=1.0,
     )
     result = extract_json(content)
-    result["proposal_id"] = random.randint(0, 1000000)
+    for proposal in result:
+        proposal["proposal_id"] = random.randint(0, 1000000)
     return json.dumps(result, ensure_ascii=False)
 
 
@@ -258,7 +299,9 @@ async def score_research_proposals(proposals: str | List[str | Dict[str, Any] | 
         assert isinstance(proposals, list), "Proposals should be a list of JSON strings"
     prompt = encode_prompt(SCORE_PROMPT, proposals=[str(p) for p in proposals])
     content = await llm_acall(
-        model_name=model_name, messages=[ChatMessage(role="user", content=prompt)]
+        model_name=model_name,
+        messages=[ChatMessage(role="user", content=prompt)],
+        temperature=0.0,
     )
     scores = extract_json(content)
     return json.dumps(scores, ensure_ascii=False)

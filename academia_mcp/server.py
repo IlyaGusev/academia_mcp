@@ -22,7 +22,7 @@ from .tools.web_search import web_search, tavily_web_search, exa_web_search, bra
 from .tools.visit_webpage import visit_webpage
 from .tools.bitflip import (
     extract_bitflip_info,
-    generate_research_proposal,
+    generate_research_proposals,
     score_research_proposals,
 )
 from .tools.review import review_pdf_paper, download_pdf_paper
@@ -83,7 +83,7 @@ def run(
 
     if not disable_llm_tools and os.getenv("OPENROUTER_API_KEY"):
         server.add_tool(extract_bitflip_info)
-        server.add_tool(generate_research_proposal)
+        server.add_tool(generate_research_proposals)
         server.add_tool(score_research_proposals)
         server.add_tool(document_qa)
         server.add_tool(review_pdf_paper)
