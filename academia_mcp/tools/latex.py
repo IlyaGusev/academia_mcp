@@ -120,6 +120,7 @@ def compile_latex_from_str(
                     [
                         "pdflatex",
                         "-interaction=nonstopmode",
+                        "-file-line-error",
                         tex_filename,
                     ],
                     cwd=str(temp_dir_path),
