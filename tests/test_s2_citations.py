@@ -10,19 +10,13 @@ def test_s2_citations_pingpong() -> None:
 
 
 def test_s2_citations_transformers() -> None:
-    try:
-        citations = json.loads(s2_get_citations("1706.03762"))
-        assert citations["total_count"] >= 100000
-    except Exception:
-        pass
+    citations = json.loads(s2_get_citations("1706.03762"))
+    assert citations["total_count"] >= 100000
 
 
 def test_s2_citations_reversed() -> None:
-    try:
-        citations = json.loads(s2_get_references("1706.03762"))
-        assert citations["total_count"] <= 100
-    except Exception:
-        pass
+    citations = json.loads(s2_get_references("1706.03762"))
+    assert citations["total_count"] <= 100
 
 
 def test_s2_citations_versions() -> None:

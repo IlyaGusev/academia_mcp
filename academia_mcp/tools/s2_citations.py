@@ -7,9 +7,9 @@ from typing import Optional, List, Dict, Any
 from academia_mcp.utils import get_with_retries
 
 
-OLD_API_URL_TEMPLATE = "https://api.semanticscholar.org/v1/paper/{paper_id}"
-GRAPH_URL_TEMPLATE = "https://api.semanticscholar.org/graph/v1/paper/{paper_id}/citations?fields={fields}&offset={offset}&limit={limit}"
-REVERSED_GRAPH_URL_TEMPLATE = "https://api.semanticscholar.org/graph/v1/paper/{paper_id}/references?fields={fields}&offset={offset}&limit={limit}"
+PAPER_URL_TEMPLATE = "https://api.semanticscholar.org/graph/v1/paper/{paper_id}?fields={fields}"
+CITATIONS_URL_TEMPLATE = "https://api.semanticscholar.org/graph/v1/paper/{paper_id}/citations?fields={fields}&offset={offset}&limit={limit}"
+REFERENCES_URL_TEMPLATE = "https://api.semanticscholar.org/graph/v1/paper/{paper_id}/references?fields={fields}&offset={offset}&limit={limit}"
 FIELDS = "title,authors,externalIds,venue,citationCount,publicationDate"
 
 
@@ -77,17 +77,19 @@ def s2_get_citations(
         arxiv_id = arxiv_id.split("v")[0]
     paper_id = f"arxiv:{arxiv_id}"
 
-    url = GRAPH_URL_TEMPLATE.format(paper_id=paper_id, fields=FIELDS, offset=offset, limit=limit)
+    url = CITATIONS_URL_TEMPLATE.format(
+        paper_id=paper_id, fields=FIELDS, offset=offset, limit=limit
+    )
     response = get_with_retries(url)
     result = response.json()
     entries = result["data"]
     total_count = len(result["data"]) + result["offset"]
 
     if "next" in result:
-        paper_url = OLD_API_URL_TEMPLATE.format(paper_id=paper_id)
+        paper_url = PAPER_URL_TEMPLATE.format(paper_id=paper_id, fields=FIELDS)
         paper_response = get_with_retries(paper_url)
         paper_result = paper_response.json()
-        total_count = paper_result["numCitedBy"]
+        total_count = paper_result["citationCount"]
 
     return _format_entries(entries, offset if offset else 0, total_count)
 
@@ -116,7 +118,7 @@ def s2_get_references(
         arxiv_id = arxiv_id.split("v")[0]
     paper_id = f"arxiv:{arxiv_id}"
 
-    url = REVERSED_GRAPH_URL_TEMPLATE.format(
+    url = REFERENCES_URL_TEMPLATE.format(
         paper_id=paper_id, fields=FIELDS, offset=offset, limit=limit
     )
     response = get_with_retries(url)
