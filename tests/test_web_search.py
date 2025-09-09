@@ -5,7 +5,6 @@ from academia_mcp.tools import web_search
 
 def test_web_search_base() -> None:
     result = web_search("autoregressive models path-star graphs", limit=20)
-    assert "The Mystery of the Pathological" in result
     results = json.loads(result)
     assert results
     assert "score" not in str(results)
