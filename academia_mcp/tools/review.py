@@ -131,8 +131,10 @@ Return the result as a JSON object in the following format:
     "limitations": "Limitations of the paper",
     "overall": "Number + short description",
     "confidence": "Number + short description",
-    "format_issues": "Format issues",
+    "format_issues": "Format issues"
 }
+
+Always produce a correct JSON object.
 """
 
 
