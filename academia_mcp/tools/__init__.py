@@ -9,6 +9,7 @@ from .latex import (
     compile_latex_from_str,
     get_latex_template,
     get_latex_templates_list,
+    read_pdf,
 )
 from .web_search import web_search, tavily_web_search, exa_web_search, brave_web_search
 from .visit_webpage import visit_webpage
@@ -37,4 +38,5 @@ __all__ = [
     "score_research_proposals",
     "review_pdf_paper",
     "download_pdf_paper",
+    "read_pdf",
 ]

@@ -17,6 +17,7 @@ from .tools.latex import (
     compile_latex_from_str,
     get_latex_template,
     get_latex_templates_list,
+    read_pdf,
 )
 from .tools.web_search import web_search, tavily_web_search, exa_web_search, brave_web_search
 from .tools.visit_webpage import visit_webpage
@@ -70,6 +71,7 @@ def run(
     server.add_tool(get_latex_templates_list)
     server.add_tool(visit_webpage)
     server.add_tool(download_pdf_paper)
+    server.add_tool(read_pdf)
 
     if not disable_web_search_tools:
         if os.getenv("TAVILY_API_KEY"):

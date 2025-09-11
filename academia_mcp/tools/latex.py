@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 from academia_mcp.files import get_workspace_dir, DEFAULT_LATEX_TEMPLATES_DIR_PATH
+from academia_mcp.pdf import parse_pdf_file
 
 
 def get_latex_templates_list() -> str:
@@ -118,9 +119,11 @@ def compile_latex_from_str(
             try:
                 subprocess.run(
                     [
-                        "pdflatex",
+                        "latexmk",
+                        "-pdf",
                         "-interaction=nonstopmode",
                         "-file-line-error",
+                        "-diagnostics",
                         tex_filename,
                     ],
                     cwd=str(temp_dir_path),
@@ -133,13 +136,10 @@ def compile_latex_from_str(
                 return f"Compilation timed out after {timeout} seconds"
             except subprocess.CalledProcessError as e:
                 combined_output = (e.stdout or "") + "\n" + (e.stderr or "")
-                error_lines = [
-                    line
-                    for line in combined_output.split("\n")
-                    if ("error" in line.lower() or "!" in line)
-                ]
-                if error_lines:
-                    return "Compilation failed. LaTeX errors:\n" + "\n".join(error_lines)
+                log_path = temp_dir_path / "temp.log"
+                if log_path.exists():
+                    log_content = log_path.read_text(encoding="utf-8", errors="ignore")
+                    combined_output = combined_output + "\n\ntemp.log content:\n" + log_content
                 return f"Compilation failed. Full LaTeX output:\n{combined_output}"
 
             pdf_path = temp_dir_path / pdf_filename
@@ -154,3 +154,16 @@ def compile_latex_from_str(
             )
     except Exception as e:
         return f"Compilation failed due to an unexpected error: {e}"
+
+
+def read_pdf(pdf_path: str) -> str:
+    """
+    Read a PDF file to text from the file system.
+
+    Args:
+        pdf_path: The path to the pdf file in the working directory.
+
+    Returns a JSON-serialized list of strings where each string is a page of the pdf file.
+    """
+    full_path = Path(get_workspace_dir()) / pdf_path
+    return json.dumps(parse_pdf_file(full_path))
