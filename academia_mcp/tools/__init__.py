@@ -5,8 +5,7 @@ from .hf_datasets_search import hf_datasets_search
 from .s2_citations import s2_get_references, s2_get_citations
 from .document_qa import document_qa
 from .latex import (
-    compile_latex_from_file,
-    compile_latex_from_str,
+    compile_latex,
     get_latex_template,
     get_latex_templates_list,
     read_pdf,
@@ -24,8 +23,7 @@ __all__ = [
     "s2_get_citations",
     "hf_datasets_search",
     "document_qa",
-    "compile_latex_from_file",
-    "compile_latex_from_str",
+    "compile_latex",
     "get_latex_template",
     "get_latex_templates_list",
     "web_search",

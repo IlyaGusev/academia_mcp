@@ -46,7 +46,7 @@ def get_latex_template(template_name: str) -> str:
     return json.dumps({"template": template_path.read_text(), "style": style_path.read_text()})
 
 
-def compile_latex_from_file(
+def compile_latex(
     input_filename: str, output_filename: str = "output.pdf", timeout: int = 60
 ) -> str:
     """
@@ -63,24 +63,8 @@ def compile_latex_from_file(
     if not input_filename_path.exists():
         input_filename_path = Path(get_workspace_dir()) / input_filename
     assert input_filename_path.exists(), f"Input file {input_filename} does not exist"
-    with open(input_filename_path, "r", encoding="utf-8") as file:
-        latex_code = file.read()
-    return compile_latex_from_str(latex_code, output_filename, timeout)
+    latex_code = input_filename_path.read_text(encoding="utf-8")
 
-
-def compile_latex_from_str(
-    latex_code: str, output_filename: str = "output.pdf", timeout: int = 60
-) -> str:
-    """
-    Compile a latex code.
-
-    Returns a string with the result of the compilation.
-
-    Args:
-        latex_code: The latex code to compile.
-        output_filename: The path to the output pdf file.
-        timeout: The timeout for the compilation. 60 seconds by default.
-    """
     if shutil.which("pdflatex") is None:
         return "pdflatex is not installed or not found in PATH."
 
@@ -113,6 +97,13 @@ def compile_latex_from_str(
                     for candidate in DEFAULT_LATEX_TEMPLATES_DIR_PATH.rglob(sty_name):
                         shutil.copyfile(candidate, temp_dir_path / sty_name)
                         break
+            except Exception:
+                pass
+
+            try:
+                bib_source_path = input_filename_path.parent / "references.bib"
+                if bib_source_path.exists():
+                    shutil.copyfile(bib_source_path, temp_dir_path / "references.bib")
             except Exception:
                 pass
 

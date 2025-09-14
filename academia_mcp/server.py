@@ -13,8 +13,7 @@ from .tools.hf_datasets_search import hf_datasets_search
 from .tools.anthology_search import anthology_search
 from .tools.document_qa import document_qa
 from .tools.latex import (
-    compile_latex_from_file,
-    compile_latex_from_str,
+    compile_latex,
     get_latex_template,
     get_latex_templates_list,
     read_pdf,
@@ -65,8 +64,7 @@ def run(
     server.add_tool(s2_get_references)
     server.add_tool(hf_datasets_search)
     server.add_tool(anthology_search)
-    server.add_tool(compile_latex_from_file)
-    server.add_tool(compile_latex_from_str)
+    server.add_tool(compile_latex)
     server.add_tool(get_latex_template)
     server.add_tool(get_latex_templates_list)
     server.add_tool(visit_webpage)
