@@ -1,39 +1,53 @@
 # Academia MCP
 
-[![PyPI](https://img.shields.io/pypi/v/codearkt?label=PyPI%20package)](https://pypi.org/project/academia-mcp/)
+[![PyPI](https://img.shields.io/pypi/v/academia-mcp?label=PyPI%20package)](https://pypi.org/project/academia-mcp/)
 [![CI](https://github.com/IlyaGusev/academia_mcp/actions/workflows/python.yml/badge.svg)](https://github.com/IlyaGusev/academia_mcp/actions/workflows/python.yml)
 [![License](https://img.shields.io/github/license/IlyaGusev/academia_mcp)](LICENSE)
 [![smithery badge](https://smithery.ai/badge/@IlyaGusev/academia_mcp)](https://smithery.ai/server/@IlyaGusev/academia_mcp)
 
-A collection of MCP tools related to the search of scientific papers:
+MCP server with tools to search, fetch, analyze, and report on scientific papers and datasets.
+
+### Features
 - ArXiv search and download
 - ACL Anthology search
-- HuggingFact datasets search
-- Semantic Scholar citation graphs
-- Web search: Exa/Brave/Tavily
-- Page crawler
+- Hugging Face datasets search
+- Semantic Scholar citations and references
+- Web search via Exa, Brave, or Tavily
+- Web page crawler, LaTeX compilation, PDF reading
+- Optional LLM-powered tools for document QA and research proposal workflows
 
-## Install
+### Requirements
+- Python 3.12+
 
+### Install
 - Using pip (end users):
-```
+```bash
 pip3 install academia-mcp
 ```
 
 - For development (uv + Makefile):
-```
+```bash
 uv venv .venv
 make install
 ```
 
-## Examples
-Comprehensive report screencast: https://www.youtube.com/watch?v=4bweqQcN6w8
-
-Single paper screencast: https://www.youtube.com/watch?v=IAAPMptJ5k8
-
-
-## Claude Desktop config
+### Quickstart
+- Run over HTTP (default transport):
+```bash
+uv run -m academia_mcp --transport streamable-http
 ```
+
+- Run over stdio (for local MCP clients like Claude Desktop):
+```bash
+python -m academia_mcp --transport stdio
+```
+
+Notes:
+- Transports: `stdio`, `sse`, `streamable-http`.
+- `host`/`port` are used for HTTP transports; ignored for `stdio`. Default port is `5056` (or `PORT`).
+
+### Claude Desktop config
+```json
 {
   "mcpServers": {
     "academia": {
@@ -49,40 +63,73 @@ Single paper screencast: https://www.youtube.com/watch?v=IAAPMptJ5k8
 }
 ```
 
-## Running the server (CLI)
+### Available tools (one-liners)
+- `arxiv_search`: Query arXiv with field-specific queries and filters.
+- `arxiv_download`: Fetch a paper by ID and convert to structured text (HTML/PDF modes).
+- `anthology_search`: Search ACL Anthology with fielded queries and optional date filtering.
+- `hf_datasets_search`: Find Hugging Face datasets with filters and sorting.
+- `s2_get_citations`: List papers citing a given arXiv paper (Semantic Scholar Graph).
+- `s2_get_references`: List papers referenced by a given arXiv paper.
+- `visit_webpage`: Fetch and normalize a web page.
+- `web_search`: Unified search wrapper; available when at least one of Exa/Brave/Tavily keys is set.
+- `exa_web_search`, `brave_web_search`, `tavily_web_search`: Provider-specific search.
+- `get_latex_templates_list`, `get_latex_template`: Enumerate and fetch built-in LaTeX templates.
+- `compile_latex`: Compile LaTeX to PDF in `WORKSPACE_DIR`.
+- `read_pdf`: Extract text per page from a PDF.
+- `download_pdf_paper`, `review_pdf_paper`: Download and optionally review PDFs (requires LLM + workspace).
+- `document_qa`: Answer questions over provided document chunks (requires LLM).
+- `extract_bitflip_info`, `generate_research_proposals`, `score_research_proposals`: Research proposal helpers (requires LLM).
 
-```
-uv run -m academia_mcp --transport streamable-http
-```
+Availability notes:
+- Set `WORKSPACE_DIR` to enable `compile_latex`, `read_pdf`, `download_pdf_paper`, and `review_pdf_paper`.
+- Set `OPENROUTER_API_KEY` to enable LLM tools (`document_qa`, `review_pdf_paper`, and bitflip tools).
+- Set one or more of `EXA_API_KEY`, `BRAVE_API_KEY`, `TAVILY_API_KEY` to enable `web_search` and provider tools.
 
-Notes:
-- Transports supported: `stdio`, `sse`, `streamable-http`.
-- Host/port are used for HTTP transports; for `stdio` they are ignored.
-
-## Makefile targets
-
-- `make install`: install the package in editable mode with uv.
-- `make validate`: run black, flake8, and mypy (strict).
-- `make test`: run the test suite with pytest.
-- `make publish`: build and publish using uv.
-
-## Environment variables
-
+### Environment variables
 Set as needed depending on which tools you use:
 
+- `OPENROUTER_API_KEY`: required for LLM-related tools.
+- `BASE_URL`: override OpenRouter base URL.
+- `DOCUMENT_QA_MODEL_NAME`: override default model for `document_qa`.
+- `BITFLIP_MODEL_NAME`: override default model for bitflip tools.
 - `TAVILY_API_KEY`: enables Tavily in `web_search`.
 - `EXA_API_KEY`: enables Exa in `web_search` and `visit_webpage`.
 - `BRAVE_API_KEY`: enables Brave in `web_search`.
-- `OPENROUTER_API_KEY`: required for `document_qa`.
-- `BASE_URL`: override OpenRouter base URL for `document_qa` and bitflip tools.
-- `DOCUMENT_QA_MODEL_NAME`: override default model for `document_qa`.
-- `BITFLIP_MODEL_NAME`: override default model for bitflip tools.
 - `WORKSPACE_DIR`: directory for generated files (PDFs, temp artifacts).
+- `PORT`: HTTP port (default `5056`).
 
-## md_to_pdf requirements
+You can put these in a `.env` file in the project root.
 
-The `md_to_pdf` tool invokes `pdflatex`. Ensure a LaTeX distribution is installed and `pdflatex` is on PATH. On Debian/Ubuntu:
-
+### Docker
+Build the image:
+```bash
+docker build -t academia_mcp .
 ```
-sudo apt install texlive-latex-base texlive-fonts-recommended texlive-latex-extra texlive-science
+
+Run the server (HTTP):
+```bash
+docker run --rm -p 5056:5056 \
+  -e PORT=5056 \
+  -e OPENROUTER_API_KEY=your_key_here \
+  -e WORKSPACE_DIR=/workspace \
+  -v "$PWD/workdir:/workspace" \
+  academia_mcp
+```
+
+Or use existing image: `phoenix120/academia_mcp`
+
+### Examples
+- [Comprehensive report screencast (YouTube)](https://www.youtube.com/watch?v=4bweqQcN6w8)
+- [Single paper screencast (YouTube)](https://www.youtube.com/watch?v=IAAPMptJ5k8)
+
+### Makefile targets
+- `make install`: install the package in editable mode with uv
+- `make validate`: run black, flake8, and mypy (strict)
+- `make test`: run the test suite with pytest
+- `make publish`: build and publish using uv
+
+### LaTeX/PDF requirements
+Only needed for LaTeX/PDF tools. Ensure a LaTeX distribution is installed and `pdflatex` is on PATH, as well as `latexmk`. On Debian/Ubuntu:
+```bash
+sudo apt install texlive-latex-base texlive-fonts-recommended texlive-latex-extra texlive-science latexmk
 ```
