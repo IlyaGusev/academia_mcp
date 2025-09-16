@@ -4,6 +4,7 @@
 [![CI](https://github.com/IlyaGusev/academia_mcp/actions/workflows/python.yml/badge.svg)](https://github.com/IlyaGusev/academia_mcp/actions/workflows/python.yml)
 [![License](https://img.shields.io/github/license/IlyaGusev/academia_mcp)](LICENSE)
 [![smithery badge](https://smithery.ai/badge/@IlyaGusev/academia_mcp)](https://smithery.ai/server/@IlyaGusev/academia_mcp)
+[![Verified on MseeP](https://mseep.ai/badge.svg)](https://mseep.ai/app/e818878b-c3a6-4b3d-a5b4-e54dcd1f1fed)
 
 MCP server with tools to search, fetch, analyze, and report on scientific papers and datasets.
 
