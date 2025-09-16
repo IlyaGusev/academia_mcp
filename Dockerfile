@@ -17,8 +17,6 @@ RUN apk add --no-cache \
     fontconfig \
     ttf-dejavu
 
-RUN latexmk -v && pdflatex --version && xelatex --version
-
 COPY . /app
 RUN  uv sync --no-dev
 RUN apk del .build-deps && rm -rf /root/.cache/uv
