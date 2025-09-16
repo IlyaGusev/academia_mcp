@@ -26,7 +26,13 @@ jobs:
         make install
     - name: Install latex
       run: |
-        sudo apt install texlive texlive-latex-base texlive-fonts-recommended texlive-latex-extra texlive-science
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          latexmk \
+          texlive-latex-recommended \
+          texlive-latex-extra \
+          texlive-fonts-recommended \
+          texlive-science
     - name: Lint
       run: |
         make validate
