@@ -1,34 +1,45 @@
-import os
 import socket
+import logging
+from logging.config import dictConfig
 from typing import Optional, Literal
 
 import fire  # type: ignore
 from mcp.server.fastmcp import FastMCP
-from dotenv import load_dotenv
+from uvicorn.config import LOGGING_CONFIG as UVICORN_LOGGING_CONFIG
 
-from .tools.arxiv_search import arxiv_search
-from .tools.arxiv_download import arxiv_download
-from .tools.s2_citations import s2_get_citations, s2_get_references
-from .tools.hf_datasets_search import hf_datasets_search
-from .tools.anthology_search import anthology_search
-from .tools.document_qa import document_qa
-from .tools.latex import (
+from academia_mcp.settings import settings
+from academia_mcp.tools.arxiv_search import arxiv_search
+from academia_mcp.tools.arxiv_download import arxiv_download
+from academia_mcp.tools.s2_citations import s2_get_citations, s2_get_references
+from academia_mcp.tools.hf_datasets_search import hf_datasets_search
+from academia_mcp.tools.anthology_search import anthology_search
+from academia_mcp.tools.document_qa import document_qa
+from academia_mcp.tools.latex import (
     compile_latex,
     get_latex_template,
     get_latex_templates_list,
     read_pdf,
 )
-from .tools.web_search import web_search, tavily_web_search, exa_web_search, brave_web_search
-from .tools.visit_webpage import visit_webpage
-from .tools.bitflip import (
+from academia_mcp.tools.web_search import (
+    web_search,
+    tavily_web_search,
+    exa_web_search,
+    brave_web_search,
+)
+from academia_mcp.tools.visit_webpage import visit_webpage
+from academia_mcp.tools.bitflip import (
     extract_bitflip_info,
     generate_research_proposals,
     score_research_proposals,
 )
-from .tools.review import review_pdf_paper, download_pdf_paper
+from academia_mcp.tools.review import review_pdf_paper, download_pdf_paper
 
 
-load_dotenv()
+def configure_uvicorn_style_logging(level: int = logging.INFO) -> None:
+    config = {**UVICORN_LOGGING_CONFIG}
+    config["disable_existing_loggers"] = False
+    config["root"] = {"handlers": ["default"], "level": logging.getLevelName(level)}
+    dictConfig(config)
 
 
 def find_free_port() -> int:
@@ -51,12 +62,14 @@ def run(
     disable_web_search_tools: bool = False,
     disable_llm_tools: bool = False,
 ) -> None:
+    configure_uvicorn_style_logging()
     server = FastMCP(
         "Academia MCP",
         stateless_http=True,
         streamable_http_path=streamable_http_path,
         mount_path=mount_path,
     )
+    logger = logging.getLogger(__name__)
 
     server.add_tool(arxiv_search)
     server.add_tool(arxiv_download)
@@ -64,33 +77,45 @@ def run(
     server.add_tool(s2_get_references)
     server.add_tool(hf_datasets_search)
     server.add_tool(anthology_search)
-    server.add_tool(compile_latex)
     server.add_tool(get_latex_template)
     server.add_tool(get_latex_templates_list)
     server.add_tool(visit_webpage)
-    server.add_tool(download_pdf_paper)
-    server.add_tool(read_pdf)
+
+    if settings.WORKSPACE_DIR:
+        server.add_tool(compile_latex)
+        server.add_tool(download_pdf_paper)
+        server.add_tool(read_pdf)
+    else:
+        logger.warning(
+            "WORKSPACE_DIR is not set, compile_latex/download_pdf_paper/read_pdf will not be available!"
+        )
 
     if not disable_web_search_tools:
-        if os.getenv("TAVILY_API_KEY"):
+        if settings.TAVILY_API_KEY:
             server.add_tool(tavily_web_search)
-        if os.getenv("EXA_API_KEY"):
+        if settings.EXA_API_KEY:
             server.add_tool(exa_web_search)
-        if os.getenv("BRAVE_API_KEY"):
+        if settings.BRAVE_API_KEY:
             server.add_tool(brave_web_search)
-        if os.getenv("EXA_API_KEY") or os.getenv("BRAVE_API_KEY") or os.getenv("TAVILY_API_KEY"):
+        if settings.EXA_API_KEY or settings.BRAVE_API_KEY or settings.TAVILY_API_KEY:
             server.add_tool(web_search)
+        else:
+            logger.warning("No web search tools keys are set, web_search will not be available!")
 
-    if not disable_llm_tools and os.getenv("OPENROUTER_API_KEY"):
+    if not disable_llm_tools and settings.OPENROUTER_API_KEY:
         server.add_tool(extract_bitflip_info)
         server.add_tool(generate_research_proposals)
         server.add_tool(score_research_proposals)
         server.add_tool(document_qa)
-        server.add_tool(review_pdf_paper)
+        if settings.WORKSPACE_DIR:
+            server.add_tool(review_pdf_paper)
+    else:
+        logger.warning("No OpenRouter API key is set, LLM-related tools will not be available!")
 
     if port is None:
-        port = int(os.environ.get("PORT", -1))
-        if port == -1:
+        if settings.PORT is not None:
+            port = int(settings.PORT)
+        else:
             port = find_free_port()
     server.settings.port = port
     server.settings.host = host

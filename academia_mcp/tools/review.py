@@ -1,6 +1,6 @@
 import base64
-import os
 import uuid
+import tempfile
 from io import BytesIO
 from pathlib import Path
 from typing import List, Dict, Any
@@ -8,6 +8,7 @@ from typing import List, Dict, Any
 from academia_mcp.pdf import parse_pdf_file_to_images, parse_pdf_file, download_pdf
 from academia_mcp.llm import llm_acall, ChatMessage
 from academia_mcp.files import get_workspace_dir
+from academia_mcp.settings import settings
 
 
 PROMPT = """
@@ -138,6 +139,16 @@ Always produce a correct JSON object.
 """
 
 
+def _create_pdf_filename(pdf_url: str) -> str:
+    if "arxiv.org/pdf" in pdf_url:
+        pdf_filename = pdf_url.split("/")[-1]
+    else:
+        pdf_filename = str(uuid.uuid4())
+    if not pdf_filename.endswith(".pdf"):
+        pdf_filename += ".pdf"
+    return pdf_filename
+
+
 def download_pdf_paper(pdf_url: str) -> str:
     """
     Download a pdf file from a url to the workspace directory.
@@ -147,13 +158,7 @@ def download_pdf_paper(pdf_url: str) -> str:
     Args:
         pdf_url: The url of the pdf file.
     """
-    if "arxiv.org/pdf" in pdf_url:
-        pdf_filename = pdf_url.split("/")[-1]
-    else:
-        pdf_filename = str(uuid.uuid4())
-    if not pdf_filename.endswith(".pdf"):
-        pdf_filename += ".pdf"
-
+    pdf_filename = _create_pdf_filename(pdf_url)
     pdf_path = Path(get_workspace_dir()) / pdf_filename
     download_pdf(pdf_url, pdf_path)
     return pdf_filename
@@ -198,7 +203,7 @@ async def review_pdf_paper(pdf_filename: str) -> str:
             "text": "####\n\nInstructions:\n\n" + PROMPT,
         }
     )
-    model_name = os.getenv("REVIEW_MODEL_NAME", "gpt-5")
+    model_name = settings.REVIEW_MODEL_NAME
     llm_response = await llm_acall(
         model_name=model_name,
         messages=[
@@ -206,3 +211,21 @@ async def review_pdf_paper(pdf_filename: str) -> str:
         ],
     )
     return llm_response.strip()
+
+
+async def review_pdf_paper_by_url(pdf_url: str) -> str:
+    """
+    Review a pdf file with a paper by url.
+    It downloads the pdf file and then reviews it.
+    It parses the pdf file into images and then sends the images to the LLM for review.
+    It can detect different issues with the paper formatting.
+    Returns a proper NeurIPS-style review.
+
+    Args:
+        pdf_url: The url of the pdf file.
+    """
+    pdf_filename = _create_pdf_filename(pdf_url)
+    with tempfile.TemporaryDirectory(prefix="temp_pdf_") as temp_dir:
+        pdf_path = Path(temp_dir) / pdf_filename
+        download_pdf(pdf_url, pdf_path)
+        return await review_pdf_paper(str(pdf_path))

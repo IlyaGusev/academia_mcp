@@ -1,14 +1,12 @@
-import os
 import json
 from typing import List, Any, Dict
-from dotenv import load_dotenv
 
 from pydantic import BaseModel
 
 from academia_mcp.llm import llm_acall
 from academia_mcp.utils import truncate_content
+from academia_mcp.settings import settings
 
-load_dotenv()
 
 PROMPT = """You are a helpful assistant that answers questions about documents accurately and concisely.
 Please answer the following questions based solely on the provided document.
@@ -65,10 +63,10 @@ async def document_qa(
         document = json.dumps(document)
     assert document and document.strip(), "Please provide non-empty 'document'"
 
-    question = truncate_content(question, 10000)
-    document = truncate_content(document, 200000)
+    question = truncate_content(question, settings.DOCUMENT_QA_QUESTION_MAX_LENGTH)
+    document = truncate_content(document, settings.DOCUMENT_QA_DOCUMENT_MAX_LENGTH)
 
-    model_name = os.getenv("DOCUMENT_QA_MODEL_NAME", "deepseek/deepseek-chat-v3-0324")
+    model_name = settings.DOCUMENT_QA_MODEL_NAME
     prompt = PROMPT.format(question=question, document=document)
     content = await llm_acall(
         model_name=model_name, messages=[ChatMessage(role="user", content=prompt)]

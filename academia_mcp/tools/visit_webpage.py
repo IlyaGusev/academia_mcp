@@ -1,18 +1,18 @@
 import re
-import os
 import json
 from typing import Optional
 
 from markdownify import markdownify  # type: ignore
 
 from academia_mcp.utils import get_with_retries, post_with_retries
+from academia_mcp.settings import settings
 
 EXA_CONTENTS_URL = "https://api.exa.ai/contents"
 AVAILABLE_PROVIDERS = ("basic", "exa")
 
 
 def _exa_visit_webpage(url: str) -> str:
-    key = os.getenv("EXA_API_KEY", "")
+    key = settings.EXA_API_KEY or ""
     assert key, "Error: EXA_API_KEY is not set and no api_key was provided"
     payload = {
         "urls": [url],
@@ -38,14 +38,14 @@ def visit_webpage(url: str, provider: Optional[str] = "basic") -> str:
         provider in AVAILABLE_PROVIDERS
     ), f"Invalid provider: {provider}. Available providers: {AVAILABLE_PROVIDERS}"
 
-    if provider == "exa":
+    if provider == "exa" and settings.EXA_API_KEY:
         return _exa_visit_webpage(url)
 
     assert provider == "basic"
     response = get_with_retries(url)
     content_type = response.headers.get("content-type", "").lower()
     if not content_type or (not content_type.startswith("text/") and "html" not in content_type):
-        if os.getenv("EXA_API_KEY"):
+        if settings.EXA_API_KEY:
             return _exa_visit_webpage(url)
         return json.dumps(
             {"id": url, "error": f"Unsupported content-type: {content_type or 'unknown'}"}

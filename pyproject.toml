@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "academia-mcp"
-version = "1.8.1"
+version = "1.9.0"
 description = "MCP server that provides different tools to search for scientific publications"
 readme = "README.md"
 authors = [
@@ -36,6 +36,7 @@ dependencies = [
     "datasets>=4.0.0",
     "pymupdf>=1.26.4",
     "pillow>=11.3.0",
+    "pydantic-settings>=2.6.0",
 ]
 
 [dependency-groups]
@@ -78,4 +79,5 @@ filterwarnings = [
     "ignore:builtin type SwigPyObject has no __module__ attribute:DeprecationWarning",
     "ignore:builtin type swigvarlink has no __module__ attribute:DeprecationWarning",
     "ignore:The 'warn' method is deprecated, use 'warning' instead:DeprecationWarning:acl_anthology.text.texmath",
+    "ignore:Data directory contains a different schema.rnc as this library; you might need to update the data or the acl-anthology library.",
 ]

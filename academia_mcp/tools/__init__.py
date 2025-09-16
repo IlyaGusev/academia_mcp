@@ -13,7 +13,7 @@ from .latex import (
 from .web_search import web_search, tavily_web_search, exa_web_search, brave_web_search
 from .visit_webpage import visit_webpage
 from .bitflip import extract_bitflip_info, generate_research_proposals, score_research_proposals
-from .review import review_pdf_paper, download_pdf_paper
+from .review import review_pdf_paper, download_pdf_paper, review_pdf_paper_by_url
 
 __all__ = [
     "arxiv_search",
@@ -35,6 +35,7 @@ __all__ = [
     "generate_research_proposals",
     "score_research_proposals",
     "review_pdf_paper",
+    "review_pdf_paper_by_url",
     "download_pdf_paper",
     "read_pdf",
 ]

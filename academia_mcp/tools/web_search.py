@@ -1,8 +1,8 @@
-import os
 import json
 from typing import Optional
 
 from academia_mcp.utils import post_with_retries, get_with_retries
+from academia_mcp.settings import settings
 
 
 EXA_SEARCH_URL = "https://api.exa.ai/search"
@@ -32,9 +32,9 @@ def web_search(
     providers = ("tavily", "brave", "exa")
     assert provider in providers, "Error: provider must be either 'exa', 'tavily' or 'brave'"
 
-    is_tavily_available = os.getenv("TAVILY_API_KEY") is not None
-    is_exa_available = os.getenv("EXA_API_KEY") is not None
-    is_brave_available = os.getenv("BRAVE_API_KEY") is not None
+    is_tavily_available = bool(settings.TAVILY_API_KEY)
+    is_exa_available = bool(settings.EXA_API_KEY)
+    is_brave_available = bool(settings.BRAVE_API_KEY)
     assert is_tavily_available or is_exa_available or is_brave_available
     availability = {
         "tavily": is_tavily_available,
@@ -76,7 +76,7 @@ def tavily_web_search(query: str, limit: Optional[int] = 20) -> str:
     assert isinstance(limit, int), "Error: limit should be an integer"
     assert 0 < limit <= 25, "Error: limit should be between 1 and 25"
 
-    key = os.getenv("TAVILY_API_KEY", "")
+    key = settings.TAVILY_API_KEY or ""
     assert key, "Error: TAVILY_API_KEY is not set and no api_key was provided"
     payload = {
         "query": query,
@@ -112,7 +112,7 @@ def exa_web_search(query: str, limit: Optional[int] = 20) -> str:
     assert isinstance(limit, int), "Error: limit should be an integer"
     assert 0 < limit <= 25, "Error: limit should be between 1 and 25"
 
-    key = os.getenv("EXA_API_KEY", "")
+    key = settings.EXA_API_KEY or ""
     assert key, "Error: EXA_API_KEY is not set and no api_key was provided"
     payload = {
         "query": query,
@@ -151,7 +151,7 @@ def brave_web_search(query: str, limit: Optional[int] = 20) -> str:
     assert isinstance(limit, int), "Error: limit should be an integer"
     assert 0 < limit <= 20, "Error: limit should be between 1 and 20"
 
-    key = os.getenv("BRAVE_API_KEY", "")
+    key = settings.BRAVE_API_KEY or ""
     assert key, "Error: BRAVE_API_KEY is not set and no api_key was provided"
     payload = {
         "q": query,

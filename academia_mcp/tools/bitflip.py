@@ -2,7 +2,6 @@
 # https://web.stanford.edu/class/cs197c/slides/02-literature-search.pdf
 
 import json
-import os
 import random
 from typing import List, Optional, Any, Dict
 
@@ -12,6 +11,7 @@ from datasets import load_dataset  # type: ignore
 from academia_mcp.tools.arxiv_download import arxiv_download
 from academia_mcp.utils import extract_json, encode_prompt
 from academia_mcp.llm import llm_acall, ChatMessage
+from academia_mcp.settings import settings
 
 
 class ProposalDataset:
@@ -201,7 +201,7 @@ async def extract_bitflip_info(arxiv_id: str) -> str:
     Args:
         arxiv_id: The arXiv ID of the paper to extract the Bit-Flip information from.
     """
-    model_name = os.getenv("BITFLIP_MODEL_NAME", "deepseek/deepseek-chat-v3-0324")
+    model_name = settings.BITFLIP_MODEL_NAME
     paper = arxiv_download(arxiv_id)
     abstract = json.loads(paper)["abstract"]
     prompt = encode_prompt(EXTRACT_PROMPT, abstract=abstract)
@@ -240,8 +240,8 @@ async def generate_research_proposals(
     ]
     Use `json.loads` to deserialize the result if you want to get specific items.
     """
-    model_name = os.getenv("BITFLIP_MODEL_NAME", "deepseek/deepseek-chat-v3-0324")
-    max_completion_tokens = int(os.getenv("BITFLIP_MAX_COMPLETION_TOKENS", 16384))
+    model_name = settings.BITFLIP_MODEL_NAME
+    max_completion_tokens = int(settings.BITFLIP_MAX_COMPLETION_TOKENS)
     examples = ProposalDataset.get_dataset()[:]
     examples = random.choices(examples, k=2)
 
@@ -293,7 +293,7 @@ async def score_research_proposals(proposals: str | List[str | Dict[str, Any] | 
     Args:
         proposals: A list of JSON strings with research proposals.
     """
-    model_name = os.getenv("BITFLIP_MODEL_NAME", "deepseek/deepseek-chat-v3-0324")
+    model_name = settings.BITFLIP_MODEL_NAME
     if isinstance(proposals, str):
         proposals = json.loads(proposals)
         assert isinstance(proposals, list), "Proposals should be a list of JSON strings"
