@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/ilyagusev-academia-mcp-badge.png)](https://mseep.ai/app/ilyagusev-academia-mcp)
+
 # Academia MCP
 
 [![PyPI](https://img.shields.io/pypi/v/academia-mcp?label=PyPI%20package)](https://pypi.org/project/academia-mcp/)
