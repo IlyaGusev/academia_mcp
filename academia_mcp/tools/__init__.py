@@ -2,7 +2,7 @@ from .arxiv_search import arxiv_search
 from .anthology_search import anthology_search
 from .arxiv_download import arxiv_download
 from .hf_datasets_search import hf_datasets_search
-from .s2_citations import s2_get_references, s2_get_citations
+from .s2 import s2_get_references, s2_get_citations, s2_corpus_id_from_arxiv_id, s2_get_info
 from .document_qa import document_qa
 from .latex import (
     compile_latex,
@@ -21,6 +21,8 @@ __all__ = [
     "anthology_search",
     "s2_get_references",
     "s2_get_citations",
+    "s2_corpus_id_from_arxiv_id",
+    "s2_get_info",
     "hf_datasets_search",
     "document_qa",
     "compile_latex",

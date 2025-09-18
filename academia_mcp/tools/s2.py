@@ -126,3 +126,38 @@ def s2_get_references(
     entries = result["data"]
     total_count = len(result["data"]) + result["offset"]
     return _format_entries(entries, offset if offset else 0, total_count)
+
+
+def s2_corpus_id_from_arxiv_id(arxiv_id: str) -> int:
+    """
+    Get the S2 Corpus ID for a given arXiv ID.
+
+    Args:
+        arxiv_id: The ID of a given arXiv paper.
+    """
+    assert isinstance(arxiv_id, str), "Error: Your arxiv_id must be a string"
+    if "v" in arxiv_id:
+        arxiv_id = arxiv_id.split("v")[0]
+    paper_url = PAPER_URL_TEMPLATE.format(paper_id=f"arxiv:{arxiv_id}", fields="externalIds")
+    response = get_with_retries(paper_url)
+    result = response.json()
+    return int(result["externalIds"]["CorpusId"])
+
+
+def s2_get_info(arxiv_id: str) -> str:
+    """
+    Get the S2 info for a given arXiv ID.
+
+    Returns a JSON object serialized to a string. The structure is:
+    {"title": ..., "authors": ..., "externalIds": ..., "venue": ..., "citationCount": ..., "publicationDate": ...}
+    Use `json.loads` to deserialize the result if you want to get specific fields.
+
+    Args:
+        arxiv_id: The ID of a given arXiv paper.
+    """
+    assert isinstance(arxiv_id, str), "Error: Your arxiv_id must be a string"
+    if "v" in arxiv_id:
+        arxiv_id = arxiv_id.split("v")[0]
+    paper_url = PAPER_URL_TEMPLATE.format(paper_id=f"arxiv:{arxiv_id}", fields=FIELDS)
+    response = get_with_retries(paper_url)
+    return json.dumps(response.json(), ensure_ascii=False)

@@ -10,7 +10,12 @@ from uvicorn.config import LOGGING_CONFIG as UVICORN_LOGGING_CONFIG
 from academia_mcp.settings import settings
 from academia_mcp.tools.arxiv_search import arxiv_search
 from academia_mcp.tools.arxiv_download import arxiv_download
-from academia_mcp.tools.s2_citations import s2_get_citations, s2_get_references
+from academia_mcp.tools.s2 import (
+    s2_get_citations,
+    s2_get_references,
+    s2_corpus_id_from_arxiv_id,
+    s2_get_info,
+)
 from academia_mcp.tools.hf_datasets_search import hf_datasets_search
 from academia_mcp.tools.anthology_search import anthology_search
 from academia_mcp.tools.document_qa import document_qa
@@ -75,6 +80,8 @@ def run(
     server.add_tool(arxiv_download)
     server.add_tool(s2_get_citations)
     server.add_tool(s2_get_references)
+    server.add_tool(s2_corpus_id_from_arxiv_id)
+    server.add_tool(s2_get_info)
     server.add_tool(hf_datasets_search)
     server.add_tool(anthology_search)
     server.add_tool(get_latex_template)
