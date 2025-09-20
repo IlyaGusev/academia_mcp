@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "academia-mcp"
-version = "1.9.1"
+version = "1.9.2"
 description = "MCP server that provides different tools to search for scientific publications"
 readme = "README.md"
 authors = [

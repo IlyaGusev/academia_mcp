@@ -38,6 +38,7 @@ from academia_mcp.tools.bitflip import (
     score_research_proposals,
 )
 from academia_mcp.tools.review import review_pdf_paper, download_pdf_paper
+from academia_mcp.tools.show_image import show_image
 
 
 def configure_uvicorn_style_logging(level: int = logging.INFO) -> None:
@@ -87,6 +88,7 @@ def run(
     server.add_tool(get_latex_template)
     server.add_tool(get_latex_templates_list)
     server.add_tool(visit_webpage)
+    server.add_tool(show_image)
 
     if settings.WORKSPACE_DIR:
         server.add_tool(compile_latex)
