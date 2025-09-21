@@ -3,6 +3,7 @@ from typing import Optional
 
 from academia_mcp.utils import post_with_retries, get_with_retries
 from academia_mcp.settings import settings
+from academia_mcp.utils import sanitize_output
 
 
 EXA_SEARCH_URL = "https://api.exa.ai/search"
@@ -56,7 +57,7 @@ def web_search(
     elif provider == "tavily":
         result = json.loads(tavily_web_search(query, limit))
     result["search_provider"] = provider
-    return json.dumps(result, ensure_ascii=False)
+    return sanitize_output(json.dumps(result, ensure_ascii=False))
 
 
 def tavily_web_search(query: str, limit: Optional[int] = 20) -> str:
@@ -92,7 +93,7 @@ def tavily_web_search(query: str, limit: Optional[int] = 20) -> str:
         result["content"] = content
         result.pop("raw_content", None)
         result.pop("score", None)
-    return json.dumps({"results": results}, ensure_ascii=False)
+    return sanitize_output(json.dumps({"results": results}, ensure_ascii=False))
 
 
 def exa_web_search(query: str, limit: Optional[int] = 20) -> str:
@@ -131,7 +132,7 @@ def exa_web_search(query: str, limit: Optional[int] = 20) -> str:
 
     response = post_with_retries(EXA_SEARCH_URL, payload, key)
     results = response.json()["results"]
-    return json.dumps({"results": results}, ensure_ascii=False)
+    return sanitize_output(json.dumps({"results": results}, ensure_ascii=False))
 
 
 def brave_web_search(query: str, limit: Optional[int] = 20) -> str:
@@ -159,4 +160,4 @@ def brave_web_search(query: str, limit: Optional[int] = 20) -> str:
     }
     response = get_with_retries(BRAVE_SEARCH_URL, key, params=payload)
     results = response.json()["web"]["results"]
-    return json.dumps({"results": results}, ensure_ascii=False)
+    return sanitize_output(json.dumps({"results": results}, ensure_ascii=False))

@@ -6,6 +6,7 @@ from markdownify import markdownify  # type: ignore
 
 from academia_mcp.utils import get_with_retries, post_with_retries
 from academia_mcp.settings import settings
+from academia_mcp.utils import sanitize_output
 
 EXA_CONTENTS_URL = "https://api.exa.ai/contents"
 TAVILY_EXTRACT_URL = "https://api.tavily.com/extract"
@@ -20,7 +21,7 @@ def _exa_visit_webpage(url: str) -> str:
         "text": True,
     }
     response = post_with_retries(EXA_CONTENTS_URL, payload=payload, api_key=key)
-    return json.dumps(response.json()["results"][0])
+    return sanitize_output(json.dumps(response.json()["results"][0]))
 
 
 def _tavily_visit_webpage(url: str) -> str:
@@ -30,7 +31,7 @@ def _tavily_visit_webpage(url: str) -> str:
         "urls": [url],
     }
     response = post_with_retries(TAVILY_EXTRACT_URL, payload=payload, api_key=key)
-    return json.dumps(response.json()["results"][0]["raw_content"])
+    return sanitize_output(json.dumps(response.json()["results"][0]["raw_content"]))
 
 
 def visit_webpage(url: str, provider: Optional[str] = "tavily") -> str:
@@ -67,4 +68,4 @@ def visit_webpage(url: str, provider: Optional[str] = "tavily") -> str:
         )
     markdown_content = markdownify(response.text).strip()
     markdown_content = re.sub(r"\n{3,}", "\n\n", markdown_content)
-    return json.dumps({"id": url, "text": markdown_content})
+    return sanitize_output(json.dumps({"id": url, "text": markdown_content}))

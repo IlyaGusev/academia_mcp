@@ -165,3 +165,12 @@ def truncate_content(
     prefix = content[:half_length]
     suffix = content[-half_length:]
     return prefix + disclaimer + suffix
+
+
+def sanitize_output(output: str) -> str:
+    """
+    See https://github.com/modelcontextprotocol/python-sdk/issues/1144#issuecomment-3076506124
+    """
+    output = output.replace("\x85", " ")
+    output = output.replace("\u0085", " ")
+    return output

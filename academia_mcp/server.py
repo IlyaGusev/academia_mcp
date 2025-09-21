@@ -5,7 +5,9 @@ from typing import Optional, Literal
 
 import fire  # type: ignore
 from mcp.server.fastmcp import FastMCP
+import uvicorn
 from uvicorn.config import LOGGING_CONFIG as UVICORN_LOGGING_CONFIG
+from starlette.middleware.cors import CORSMiddleware
 
 from academia_mcp.settings import settings
 from academia_mcp.tools.arxiv_search import arxiv_search
@@ -133,9 +135,30 @@ def run(
             port = int(settings.PORT)
         else:
             port = find_free_port()
+
     server.settings.port = port
     server.settings.host = host
-    server.run(transport=transport)
+
+    if transport == "streamable-http":
+        # Enable CORS for browser-based clients
+        app = server.streamable_http_app()
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_credentials=True,
+            allow_methods=["GET", "POST", "OPTIONS"],
+            allow_headers=["*"],
+            expose_headers=["mcp-session-id", "mcp-protocol-version"],
+            max_age=86400,
+        )
+        uvicorn.run(
+            app,
+            host=server.settings.host,
+            port=server.settings.port,
+            log_level=server.settings.log_level.lower(),
+        )
+    else:
+        server.run(transport=transport)
 
 
 if __name__ == "__main__":
