@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     TAVILY_API_KEY: Optional[str] = None
     EXA_API_KEY: Optional[str] = None
     BRAVE_API_KEY: Optional[str] = None
+    OPENAI_API_KEY: Optional[str] = None
 
     REVIEW_MODEL_NAME: str = "gpt-5"
     BITFLIP_MODEL_NAME: str = "deepseek/deepseek-chat-v3-0324"
@@ -18,6 +19,7 @@ class Settings(BaseSettings):
     DOCUMENT_QA_MODEL_NAME: str = "deepseek/deepseek-chat-v3-0324"
     DOCUMENT_QA_QUESTION_MAX_LENGTH: int = 10000
     DOCUMENT_QA_DOCUMENT_MAX_LENGTH: int = 200000
+    DESCRIBE_IMAGE_MODEL_NAME: str = "gpt-4.1"
 
     PORT: int = 5056
     WORKSPACE_DIR: Optional[Path] = None

@@ -38,7 +38,8 @@ from academia_mcp.tools.bitflip import (
     score_research_proposals,
 )
 from academia_mcp.tools.review import review_pdf_paper, download_pdf_paper
-from academia_mcp.tools.show_image import show_image
+from academia_mcp.tools.show_image import show_image, describe_image
+from academia_mcp.tools.speech_to_text import speech_to_text
 
 
 def configure_uvicorn_style_logging(level: int = logging.INFO) -> None:
@@ -116,10 +117,16 @@ def run(
         server.add_tool(generate_research_proposals)
         server.add_tool(score_research_proposals)
         server.add_tool(document_qa)
+        server.add_tool(describe_image)
         if settings.WORKSPACE_DIR:
             server.add_tool(review_pdf_paper)
     else:
         logger.warning("No OpenRouter API key is set, LLM-related tools will not be available!")
+
+    if settings.OPENAI_API_KEY:
+        server.add_tool(speech_to_text)
+    else:
+        logger.warning("No OpenAI API key is set, speech_to_text will not be available!")
 
     if port is None:
         if settings.PORT is not None:

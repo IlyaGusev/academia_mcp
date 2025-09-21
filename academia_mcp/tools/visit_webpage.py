@@ -8,7 +8,8 @@ from academia_mcp.utils import get_with_retries, post_with_retries
 from academia_mcp.settings import settings
 
 EXA_CONTENTS_URL = "https://api.exa.ai/contents"
-AVAILABLE_PROVIDERS = ("basic", "exa")
+TAVILY_EXTRACT_URL = "https://api.tavily.com/extract"
+AVAILABLE_PROVIDERS = ("basic", "exa", "tavily")
 
 
 def _exa_visit_webpage(url: str) -> str:
@@ -22,7 +23,17 @@ def _exa_visit_webpage(url: str) -> str:
     return json.dumps(response.json()["results"][0])
 
 
-def visit_webpage(url: str, provider: Optional[str] = "basic") -> str:
+def _tavily_visit_webpage(url: str) -> str:
+    key = settings.TAVILY_API_KEY or ""
+    assert key, "Error: TAVILY_API_KEY is not set and no api_key was provided"
+    payload = {
+        "urls": [url],
+    }
+    response = post_with_retries(TAVILY_EXTRACT_URL, payload=payload, api_key=key)
+    return json.dumps(response.json()["results"][0]["raw_content"])
+
+
+def visit_webpage(url: str, provider: Optional[str] = "tavily") -> str:
     """
     Visit a webpage and return the content.
 
@@ -32,7 +43,7 @@ def visit_webpage(url: str, provider: Optional[str] = "basic") -> str:
 
     Args:
         url: The URL of the webpage to visit.
-        provider: The provider to use. Available providers: "basic" (default) or "exa".
+        provider: The provider to use. Available providers: "tavily" (default), "exa", or "basic".
     """
     assert (
         provider in AVAILABLE_PROVIDERS
@@ -40,6 +51,10 @@ def visit_webpage(url: str, provider: Optional[str] = "basic") -> str:
 
     if provider == "exa" and settings.EXA_API_KEY:
         return _exa_visit_webpage(url)
+    elif provider == "tavily" and settings.TAVILY_API_KEY:
+        return _tavily_visit_webpage(url)
+    else:
+        provider = "basic"
 
     assert provider == "basic"
     response = get_with_retries(url)
