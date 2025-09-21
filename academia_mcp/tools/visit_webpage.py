@@ -34,7 +34,7 @@ def _tavily_visit_webpage(url: str) -> str:
     return sanitize_output(json.dumps(response.json()["results"][0]["raw_content"]))
 
 
-def visit_webpage(url: str, provider: Optional[str] = "tavily") -> str:
+def visit_webpage(url: str, provider: Optional[str] = "basic") -> str:
     """
     Visit a webpage and return the content.
 
