@@ -39,7 +39,7 @@ def visit_webpage(url: str, provider: Optional[str] = "tavily") -> str:
 
     Returns a JSON object serialized to a string. The structure is: {"url": "...", "text": "..."}
     Use `json.loads` to deserialize the result if you want to get specific fields.
-    Use "exa" provider in case "basic" fails.
+    Try to use both "tavily" and "basic" providers. They might work differently for the same URL.
 
     Args:
         url: The URL of the webpage to visit.
