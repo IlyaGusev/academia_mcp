@@ -22,3 +22,11 @@ def test_web_search_brave() -> None:
     assert "The Mystery of the Pathological" in result
     results = json.loads(result)
     assert results
+
+
+def test_web_search_bug() -> None:
+    results = web_search(
+        '"Can Hiccup Supply Enough Fish to Maintain a Dragon\'s Diet?" University of Leicester'
+    )
+    assert results
+    assert len(results.splitlines()) == 1

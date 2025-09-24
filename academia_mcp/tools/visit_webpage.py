@@ -11,6 +11,7 @@ from academia_mcp.utils import sanitize_output
 EXA_CONTENTS_URL = "https://api.exa.ai/contents"
 TAVILY_EXTRACT_URL = "https://api.tavily.com/extract"
 AVAILABLE_PROVIDERS = ("basic", "exa", "tavily")
+ERROR_MESSAGE = "Failed to get content from the page. Try to use another provider."
 
 
 def _exa_visit_webpage(url: str) -> str:
@@ -21,7 +22,10 @@ def _exa_visit_webpage(url: str) -> str:
         "text": True,
     }
     response = post_with_retries(EXA_CONTENTS_URL, payload=payload, api_key=key)
-    return sanitize_output(json.dumps(response.json()["results"][0]))
+    results = response.json()["results"]
+    if not results:
+        return json.dumps({"id": url, "error": ERROR_MESSAGE})
+    return sanitize_output(json.dumps(results[0]))
 
 
 def _tavily_visit_webpage(url: str) -> str:
@@ -31,14 +35,18 @@ def _tavily_visit_webpage(url: str) -> str:
         "urls": [url],
     }
     response = post_with_retries(TAVILY_EXTRACT_URL, payload=payload, api_key=key)
-    return sanitize_output(json.dumps(response.json()["results"][0]["raw_content"]))
+    results = response.json()["results"]
+    if not results:
+        return json.dumps({"id": url, "error": ERROR_MESSAGE})
+    return sanitize_output(json.dumps(results[0]["raw_content"]))
 
 
 def visit_webpage(url: str, provider: Optional[str] = "basic") -> str:
     """
     Visit a webpage and return the content.
 
-    Returns a JSON object serialized to a string. The structure is: {"url": "...", "text": "..."}
+    Returns a JSON object serialized to a string. The structure is: {"id": "...", "text": "..."}.
+    If there are errors, the structure is: {"id": "...", "error": "..."}.
     Use `json.loads` to deserialize the result if you want to get specific fields.
     Try to use both "tavily" and "basic" providers. They might work differently for the same URL.
 
@@ -58,7 +66,10 @@ def visit_webpage(url: str, provider: Optional[str] = "basic") -> str:
         provider = "basic"
 
     assert provider == "basic"
-    response = get_with_retries(url)
+    try:
+        response = get_with_retries(url)
+    except Exception as e:
+        return json.dumps({"id": url, "error": str(e)})
     content_type = response.headers.get("content-type", "").lower()
     if not content_type or (not content_type.startswith("text/") and "html" not in content_type):
         if settings.EXA_API_KEY:
