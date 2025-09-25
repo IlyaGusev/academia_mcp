@@ -1,6 +1,11 @@
-runtime: "container"
+# Smithery configuration file: https://smithery.ai/docs/build/project-config
+
+runtime: container
 build:
-  dockerfile: "Dockerfile"
-  dockerBuildPath: "."
+  dockerfile: Dockerfile
+  dockerBuildPath: .
 startCommand:
-  type: "http"
+  type: http
+  configSchema:
+    # JSON Schema defining the configuration options for the MCP.
+    {}
