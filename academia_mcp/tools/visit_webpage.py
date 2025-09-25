@@ -1,6 +1,6 @@
 import re
 import json
-from typing import Optional
+from typing import Optional, Dict, Any, cast
 
 from markdownify import markdownify  # type: ignore
 
@@ -14,7 +14,7 @@ AVAILABLE_PROVIDERS = ("basic", "exa", "tavily")
 ERROR_MESSAGE = "Failed to get content from the page. Try to use another provider."
 
 
-def _exa_visit_webpage(url: str) -> str:
+def _exa_visit_webpage(url: str) -> Dict[str, Any]:
     key = settings.EXA_API_KEY or ""
     assert key, "Error: EXA_API_KEY is not set and no api_key was provided"
     payload = {
@@ -24,11 +24,11 @@ def _exa_visit_webpage(url: str) -> str:
     response = post_with_retries(EXA_CONTENTS_URL, payload=payload, api_key=key)
     results = response.json()["results"]
     if not results:
-        return json.dumps({"id": url, "error": ERROR_MESSAGE})
-    return sanitize_output(json.dumps(results[0]))
+        return {"error": ERROR_MESSAGE}
+    return cast(Dict[str, Any], results[0])
 
 
-def _tavily_visit_webpage(url: str) -> str:
+def _tavily_visit_webpage(url: str) -> Dict[str, Any]:
     key = settings.TAVILY_API_KEY or ""
     assert key, "Error: TAVILY_API_KEY is not set and no api_key was provided"
     payload = {
@@ -37,8 +37,25 @@ def _tavily_visit_webpage(url: str) -> str:
     response = post_with_retries(TAVILY_EXTRACT_URL, payload=payload, api_key=key)
     results = response.json()["results"]
     if not results:
-        return json.dumps({"id": url, "error": ERROR_MESSAGE})
-    return sanitize_output(json.dumps(results[0]["raw_content"]))
+        return {"error": ERROR_MESSAGE}
+    return {"text": results[0]["raw_content"]}
+
+
+def _basic_visit_webpage(url: str) -> Dict[str, Any]:
+    try:
+        response = get_with_retries(url)
+        content_type = response.headers.get("content-type", "").lower()
+        if not content_type or (
+            not content_type.startswith("text/") and "html" not in content_type
+        ):
+            if settings.EXA_API_KEY:
+                return _exa_visit_webpage(url)
+            return {"error": f"Unsupported content-type: {content_type or 'unknown'}"}
+        markdown_content = markdownify(response.text).strip()
+        markdown_content = re.sub(r"\n{3,}", "\n\n", markdown_content)
+        return {"text": markdown_content}
+    except Exception as e:
+        return {"error": str(e) + "\n" + ERROR_MESSAGE}
 
 
 def visit_webpage(url: str, provider: Optional[str] = "basic") -> str:
@@ -59,24 +76,12 @@ def visit_webpage(url: str, provider: Optional[str] = "basic") -> str:
     ), f"Invalid provider: {provider}. Available providers: {AVAILABLE_PROVIDERS}"
 
     if provider == "exa" and settings.EXA_API_KEY:
-        return _exa_visit_webpage(url)
+        result = _exa_visit_webpage(url)
     elif provider == "tavily" and settings.TAVILY_API_KEY:
-        return _tavily_visit_webpage(url)
+        result = _tavily_visit_webpage(url)
     else:
-        provider = "basic"
+        result = _basic_visit_webpage(url)
 
-    assert provider == "basic"
-    try:
-        response = get_with_retries(url)
-    except Exception as e:
-        return json.dumps({"id": url, "error": str(e)})
-    content_type = response.headers.get("content-type", "").lower()
-    if not content_type or (not content_type.startswith("text/") and "html" not in content_type):
-        if settings.EXA_API_KEY:
-            return _exa_visit_webpage(url)
-        return json.dumps(
-            {"id": url, "error": f"Unsupported content-type: {content_type or 'unknown'}"}
-        )
-    markdown_content = markdownify(response.text).strip()
-    markdown_content = re.sub(r"\n{3,}", "\n\n", markdown_content)
-    return sanitize_output(json.dumps({"id": url, "text": markdown_content}))
+    result["id"] = url
+    result["provider"] = provider
+    return sanitize_output(json.dumps(result, ensure_ascii=False))
