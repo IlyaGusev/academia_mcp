@@ -13,8 +13,8 @@ def yt_transcript(video_url: str) -> str:
     Args:
         video_url (str): YouTube video URL.
     """
-    if "youtu.be" in video_url:
-        video_id = video_url.strip().split("youtu.be/")[1]
+    if "youtu.be/" in video_url:
+        video_id = video_url.strip().split("youtu.be/")[-1]
     else:
         video_id = video_url.strip().split("v=")[-1]
     video_id = video_id.split("?")[0]
@@ -25,6 +25,9 @@ def yt_transcript(video_url: str) -> str:
             proxy_password=settings.WEBSHARE_PROXY_PASSWORD,
         )
     api = YouTubeTranscriptApi(proxy_config=proxy_config)
-    transcript = api.fetch(video_id)
+    try:
+        transcript = api.fetch(video_id)
+    except Exception as e:
+        return f"Error fetching transcript for video {video_url}: {e}"
     snippets = transcript.snippets
     return "\n".join([f"{int(entry.start)}: {' '.join(entry.text.split())}" for entry in snippets])
