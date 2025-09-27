@@ -30,3 +30,15 @@ def test_web_search_bug() -> None:
     )
     assert results
     assert len(results.splitlines()) == 1
+
+
+def test_web_search_include_domains() -> None:
+    results = web_search(
+        "autoregressive models path-star graphs",
+        include_domains=["wikipedia.org"],
+    )
+    assert results
+    results = json.loads(results)
+    assert results
+    assert len(results["results"]) > 0
+    assert all("wikipedia.org" in result["url"] for result in results["results"])

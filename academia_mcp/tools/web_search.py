@@ -1,5 +1,5 @@
 import json
-from typing import Optional
+from typing import Optional, List
 
 from academia_mcp.utils import post_with_retries, get_with_retries
 from academia_mcp.settings import settings
@@ -16,6 +16,7 @@ def web_search(
     query: str,
     limit: Optional[int] = 20,
     provider: Optional[str] = "tavily",
+    include_domains: Optional[List[str]] = None,
 ) -> str:
     """
     Search the web using Exa Search, Brave Search or Tavily and return normalized results.
@@ -29,9 +30,15 @@ def web_search(
         query: The search query, required.
         limit: The maximum number of items to return. 20 by default, maximum 25.
         provider: The provider to use. "exa", "tavily" or "brave". "tavily" by default.
+        include_domains: Optional list of domains to include in the search. None by default.
     """
     providers = ("tavily", "brave", "exa")
     assert provider in providers, "Error: provider must be either 'exa', 'tavily' or 'brave'"
+    if include_domains:
+        assert len(include_domains) > 0, "Error: include_domains should be a non-empty list"
+        assert all(
+            isinstance(domain, str) for domain in include_domains
+        ), "Error: include_domains should be a list of strings"
 
     is_tavily_available = bool(settings.TAVILY_API_KEY)
     is_exa_available = bool(settings.EXA_API_KEY)
@@ -51,16 +58,18 @@ def web_search(
 
     result = {}
     if provider == "exa":
-        result = json.loads(exa_web_search(query, limit))
+        result = json.loads(exa_web_search(query, limit, include_domains=include_domains))
     elif provider == "brave":
         result = json.loads(brave_web_search(query, limit))
     elif provider == "tavily":
-        result = json.loads(tavily_web_search(query, limit))
+        result = json.loads(tavily_web_search(query, limit, include_domains=include_domains))
     result["search_provider"] = provider
     return sanitize_output(json.dumps(result, ensure_ascii=False))
 
 
-def tavily_web_search(query: str, limit: Optional[int] = 20) -> str:
+def tavily_web_search(
+    query: str, limit: Optional[int] = 20, include_domains: Optional[List[str]] = None
+) -> str:
     """
     Search the web using Tavily and return results.
 
@@ -71,11 +80,17 @@ def tavily_web_search(query: str, limit: Optional[int] = 20) -> str:
     Args:
         query: The search query, required.
         limit: The maximum number of items to return. 20 by default, maximum 25.
+        include_domains: Optional list of domains to include in the search. None by default.
     """
     assert isinstance(query, str), "Error: Your search query must be a string"
     assert query.strip(), "Error: Your query should not be empty"
     assert isinstance(limit, int), "Error: limit should be an integer"
     assert 0 < limit <= 25, "Error: limit should be between 1 and 25"
+    if include_domains:
+        assert len(include_domains) > 0, "Error: include_domains should be a non-empty list"
+        assert all(
+            isinstance(domain, str) for domain in include_domains
+        ), "Error: include_domains should be a list of strings"
 
     key = settings.TAVILY_API_KEY or ""
     assert key, "Error: TAVILY_API_KEY is not set and no api_key was provided"
@@ -85,6 +100,8 @@ def tavily_web_search(query: str, limit: Optional[int] = 20) -> str:
         "auto_parameters": True,
         "exclude_domains": EXCLUDE_DOMAINS,
     }
+    if include_domains:
+        payload["include_domains"] = include_domains
     response = post_with_retries(TAVILY_SEARCH_URL, payload, key)
     results = response.json()["results"]
     for result in results:
@@ -96,7 +113,9 @@ def tavily_web_search(query: str, limit: Optional[int] = 20) -> str:
     return sanitize_output(json.dumps({"results": results}, ensure_ascii=False))
 
 
-def exa_web_search(query: str, limit: Optional[int] = 20) -> str:
+def exa_web_search(
+    query: str, limit: Optional[int] = 20, include_domains: Optional[List[str]] = None
+) -> str:
     """
     Search the web using Exa and return results.
 
@@ -107,11 +126,17 @@ def exa_web_search(query: str, limit: Optional[int] = 20) -> str:
     Args:
         query: The search query, required.
         limit: The maximum number of items to return. 20 by default, maximum 25.
+        include_domains: Optional list of domains to include in the search. None by default.
     """
     assert isinstance(query, str), "Error: Your search query must be a string"
     assert query.strip(), "Error: Your query should not be empty"
     assert isinstance(limit, int), "Error: limit should be an integer"
     assert 0 < limit <= 25, "Error: limit should be between 1 and 25"
+    if include_domains:
+        assert len(include_domains) > 0, "Error: include_domains should be a non-empty list"
+        assert all(
+            isinstance(domain, str) for domain in include_domains
+        ), "Error: include_domains should be a list of strings"
 
     key = settings.EXA_API_KEY or ""
     assert key, "Error: EXA_API_KEY is not set and no api_key was provided"
@@ -129,6 +154,8 @@ def exa_web_search(query: str, limit: Optional[int] = 20) -> str:
             "context": False,
         },
     }
+    if include_domains:
+        payload["includeDomains"] = include_domains
 
     response = post_with_retries(EXA_SEARCH_URL, payload, key)
     results = response.json()["results"]
