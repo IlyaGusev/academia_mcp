@@ -42,6 +42,7 @@ from academia_mcp.tools.bitflip import (
 from academia_mcp.tools.review import review_pdf_paper, download_pdf_paper
 from academia_mcp.tools.show_image import show_image, describe_image
 from academia_mcp.tools.speech_to_text import speech_to_text
+from academia_mcp.tools.yt_transcript import yt_transcript
 
 
 def configure_uvicorn_style_logging(level: int = logging.INFO) -> None:
@@ -92,6 +93,7 @@ def run(
     server.add_tool(get_latex_templates_list)
     server.add_tool(visit_webpage)
     server.add_tool(show_image)
+    server.add_tool(yt_transcript)
 
     if settings.WORKSPACE_DIR:
         server.add_tool(compile_latex)

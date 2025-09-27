@@ -16,6 +16,7 @@ from .bitflip import extract_bitflip_info, generate_research_proposals, score_re
 from .review import review_pdf_paper, download_pdf_paper, review_pdf_paper_by_url
 from .show_image import show_image, describe_image
 from .speech_to_text import speech_to_text
+from .yt_transcript import yt_transcript
 
 __all__ = [
     "arxiv_search",
@@ -45,4 +46,5 @@ __all__ = [
     "show_image",
     "describe_image",
     "speech_to_text",
+    "yt_transcript",
 ]

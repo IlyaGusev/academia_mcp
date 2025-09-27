@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     DOCUMENT_QA_DOCUMENT_MAX_LENGTH: int = 200000
     DESCRIBE_IMAGE_MODEL_NAME: str = "gpt-4.1"
 
+    WEBSHARE_PROXY_USERNAME: Optional[str] = None
+    WEBSHARE_PROXY_PASSWORD: Optional[str] = None
+
     PORT: int = 5056
     WORKSPACE_DIR: Optional[Path] = None
 
