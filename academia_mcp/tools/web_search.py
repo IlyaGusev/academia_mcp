@@ -1,5 +1,5 @@
 import json
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 from academia_mcp.utils import post_with_retries, get_with_retries
 from academia_mcp.settings import settings
@@ -10,6 +10,24 @@ EXA_SEARCH_URL = "https://api.exa.ai/search"
 TAVILY_SEARCH_URL = "https://api.tavily.com/search"
 BRAVE_SEARCH_URL = "https://api.search.brave.com/res/v1/web/search"
 EXCLUDE_DOMAINS = ["chatpaper.com"]
+
+
+def _parse_domains(query: str) -> Tuple[str, List[str]]:
+    site_term = "site:"
+    if site_term not in query:
+        return query, []
+    parts = query.split()
+    query_parts = []
+    include_domains = []
+    for part in parts:
+        if not part.startswith(site_term):
+            query_parts.append(part)
+            continue
+        domain = part[len(site_term) :]
+        if domain:
+            include_domains.append(domain)
+    query = " ".join(query_parts)
+    return query, include_domains
 
 
 def web_search(
@@ -39,6 +57,13 @@ def web_search(
         assert all(
             isinstance(domain, str) for domain in include_domains
         ), "Error: include_domains should be a list of strings"
+
+    query, query_include_domains = _parse_domains(query)
+    if query_include_domains:
+        if include_domains:
+            include_domains.extend(query_include_domains)
+        else:
+            include_domains = query_include_domains
 
     is_tavily_available = bool(settings.TAVILY_API_KEY)
     is_exa_available = bool(settings.EXA_API_KEY)

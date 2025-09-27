@@ -42,3 +42,14 @@ def test_web_search_include_domains() -> None:
     assert results
     assert len(results["results"]) > 0
     assert all("wikipedia.org" in result["url"] for result in results["results"])
+
+
+def test_web_search_include_query_domains() -> None:
+    results = web_search(
+        "site:wikipedia.org autoregressive models path-star graphs",
+    )
+    assert results
+    results = json.loads(results)
+    assert results
+    assert len(results["results"]) > 0
+    assert all("wikipedia.org" in result["url"] for result in results["results"])
