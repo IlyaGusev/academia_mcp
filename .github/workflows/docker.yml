@@ -16,6 +16,6 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build the Docker image
-        run:
+        run: |
           VERSION=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
           docker build . --file Dockerfile --tag docker.io/${{ secrets.DOCKERHUB_USERNAME }}/academia_mcp:$VERSION --tag docker.io/${{ secrets.DOCKERHUB_USERNAME }}/academia_mcp:latest --push
