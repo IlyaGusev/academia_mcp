@@ -1,4 +1,4 @@
-name: ci
+name: Main Python CI
 on:
   push:
     branches: [ main ]
