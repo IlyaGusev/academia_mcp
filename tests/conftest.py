@@ -27,7 +27,8 @@ def test_audio_url() -> str:
 
 def reset_app_status() -> None:
     AppStatus.should_exit = False
-    AppStatus.should_exit_event = None
+    if hasattr(AppStatus, "should_exit_event"):
+        AppStatus.should_exit_event = None
 
 
 class MCPServerTest:
