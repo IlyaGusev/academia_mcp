@@ -30,7 +30,20 @@ DESCRIBE_PROMPTS = {
         4. Any immediate tactical opportunities or threats
         5. Suggested next moves with brief explanations"""
     ),
-    "text": "Extract and describe any text present in this image. If there are multiple pieces of text, organize them clearly.",
+    "text": dedent(
+        """You are performing OCR and transcription.
+        Extract ALL text and numbers from the image verbatim.
+        - Preserve original casing, punctuation, symbols, mathematical notation, and whitespace layout when possible.
+        - If layout is multi-column or tabular, reconstruct lines top-to-bottom, left-to-right; use line breaks between blocks.
+        - For any uncertain or low-confidence characters, mark with a '?' and include a note.
+        - After the raw extraction, provide a clean, normalized version (fixing obvious OCR artifacts) as a separate section.
+        Return two sections:
+        [RAW TRANSCRIPTION]
+        ...
+        [NORMALIZED]
+        ...
+        """
+    ),
 }
 
 
@@ -44,10 +57,8 @@ def show_image(path: str) -> Dict[str, str]:
     ```
     Do not print it ever, just return as the last expression.
 
-    Returns an dictionary with a single "image" key.
-
     Args:
-        url: Path to file inside current work directory or web URL
+        path: Path to file inside current work directory or web URL
     """
     if path.startswith("http"):
         response = httpx.get(path, timeout=10)
@@ -80,7 +91,7 @@ async def describe_image(
             - "general": General description of the image
             - "detailed": Detailed analysis of the image
             - "chess": Analysis of a chess position
-            - "text": Extract and describe text from the image
+            - "text": Extract and describe text or numbers from the image
             - "custom": Custom description based on user prompt
     """
     image_base64 = show_image(path)["image_base64"]
@@ -93,12 +104,16 @@ async def describe_image(
         {"type": "text", "text": prompt},
         {
             "type": "image_url",
-            "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"},
+            "image_url": {"url": f"data:image/png;base64,{image_base64}"},
         },
     ]
     model_name = settings.DESCRIBE_IMAGE_MODEL_NAME
+    llm_kwargs = {}
+    if description_type in {"text", "chess"}:
+        llm_kwargs["temperature"] = 0.0
     response = await llm_acall(
         model_name=model_name,
         messages=[ChatMessage(role="user", content=content)],
+        **llm_kwargs,
     )
     return response

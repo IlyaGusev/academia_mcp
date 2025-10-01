@@ -63,25 +63,24 @@ def find_free_port() -> int:
     raise RuntimeError("No free port in range 5000-6000 found")
 
 
-def run(
-    host: str = "0.0.0.0",
-    port: Optional[int] = None,
-    mount_path: str = "/",
+def create_server(
     streamable_http_path: str = "/mcp",
-    transport: Literal["stdio", "sse", "streamable-http"] = "streamable-http",
+    mount_path: str = "/",
+    stateless_http: bool = True,
     disable_web_search_tools: bool = False,
     disable_llm_tools: bool = False,
-) -> None:
-    configure_uvicorn_style_logging()
+    port: Optional[int] = None,
+    host: str = "0.0.0.0",
+) -> FastMCP:
     server = FastMCP(
         "Academia MCP",
-        stateless_http=True,
+        stateless_http=stateless_http,
         streamable_http_path=streamable_http_path,
         mount_path=mount_path,
     )
     logger = logging.getLogger(__name__)
 
-    server.add_tool(arxiv_search)
+    server.add_tool(arxiv_search, structured_output=True)
     server.add_tool(arxiv_download)
     server.add_tool(s2_get_citations)
     server.add_tool(s2_get_references)
@@ -140,6 +139,27 @@ def run(
 
     server.settings.port = port
     server.settings.host = host
+    return server
+
+
+def run(
+    host: str = "0.0.0.0",
+    port: Optional[int] = None,
+    mount_path: str = "/",
+    streamable_http_path: str = "/mcp",
+    transport: Literal["stdio", "sse", "streamable-http"] = "streamable-http",
+    disable_web_search_tools: bool = False,
+    disable_llm_tools: bool = False,
+) -> None:
+    configure_uvicorn_style_logging()
+    server = create_server(
+        streamable_http_path=streamable_http_path,
+        mount_path=mount_path,
+        disable_web_search_tools=disable_web_search_tools,
+        disable_llm_tools=disable_llm_tools,
+        port=port,
+        host=host,
+    )
 
     if transport == "streamable-http":
         # Enable CORS for browser-based clients

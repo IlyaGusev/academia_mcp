@@ -2,12 +2,12 @@
 # https://github.com/jonatasgrosman/findpapers/blob/master/findpapers/searchers/arxiv_searcher.py
 # https://info.arxiv.org/help/api/user-manual.html
 
-import json
 import re
 from typing import Optional, List, Dict, Any, Union
 from datetime import datetime, date
 
 import xmltodict
+from pydantic import BaseModel, Field
 
 from academia_mcp.utils import get_with_retries
 
@@ -15,6 +15,25 @@ BASE_URL = "http://export.arxiv.org"
 URL_TEMPLATE = "{base_url}/api/query?search_query={query}&start={start}&sortBy={sort_by}&sortOrder={sort_order}&max_results={limit}"
 SORT_BY_OPTIONS = ("relevance", "lastUpdatedDate", "submittedDate")
 SORT_ORDER_OPTIONS = ("ascending", "descending")
+
+
+class ArxivSearchEntry(BaseModel):  # type: ignore
+    id: str = Field(description="Paper ID")
+    title: str = Field(description="Paper title")
+    authors: str = Field(description="Authors of the paper")
+    published: str = Field(description="Published date of the paper")
+    updated: str = Field(description="Updated date of the paper")
+    categories: str = Field(description="Categories of the paper")
+    comment: str = Field(description="Comment of the paper")
+    index: int = Field(description="Index of the paper", default=0)
+    abstract: Optional[str] = Field(description="Abstract of the paper", default=None)
+
+
+class ArxivSearchResponse(BaseModel):  # type: ignore
+    total_count: int = Field(description="The total number of results")
+    returned_count: int = Field(description="The number of results returned")
+    offset: int = Field(description="The offset of the results")
+    results: List[ArxivSearchEntry] = Field(description="The results, search entries")
 
 
 def _format_text_field(text: str) -> str:
@@ -48,17 +67,17 @@ def _format_date(date: str) -> str:
     return dt.strftime("%B %d, %Y")
 
 
-def _clean_entry(entry: Dict[str, Any]) -> Dict[str, Any]:
-    return {
-        "id": entry["id"].split("/")[-1],
-        "title": _format_text_field(entry["title"]),
-        "authors": _format_authors(entry["author"]),
-        "abstract": _format_text_field(entry["summary"]),
-        "published": _format_date(entry["published"]),
-        "updated": _format_date(entry["updated"]),
-        "categories": _format_categories(entry.get("category", {})),
-        "comment": _format_text_field(entry.get("arxiv:comment", {}).get("#text", "")),
-    }
+def _clean_entry(entry: Dict[str, Any]) -> ArxivSearchEntry:
+    return ArxivSearchEntry(
+        id=entry["id"].split("/")[-1],
+        title=_format_text_field(entry["title"]),
+        authors=_format_authors(entry["author"]),
+        abstract=_format_text_field(entry["summary"]),
+        published=_format_date(entry["published"]),
+        updated=_format_date(entry["updated"]),
+        categories=_format_categories(entry.get("category", {})),
+        comment=_format_text_field(entry.get("arxiv:comment", {}).get("#text", "")),
+    )
 
 
 def _convert_to_yyyymmddtttt(date_str: str) -> str:
@@ -105,22 +124,19 @@ def _format_entries(
     start_index: int,
     include_abstracts: bool,
     total_results: int,
-) -> str:
+) -> ArxivSearchResponse:
     clean_entries: List[Dict[str, Any]] = []
     for entry_num, entry in enumerate(entries):
         clean_entry = _clean_entry(entry)
         if not include_abstracts:
-            clean_entry.pop("abstract")
-        clean_entry["index"] = start_index + entry_num
+            clean_entry.abstract = None
+        clean_entry.index = start_index + entry_num
         clean_entries.append(clean_entry)
-    return json.dumps(
-        {
-            "total_count": total_results,
-            "returned_count": len(entries),
-            "offset": start_index,
-            "results": clean_entries,
-        },
-        ensure_ascii=False,
+    return ArxivSearchResponse(
+        total_count=total_results,
+        returned_count=len(entries),
+        offset=start_index,
+        results=clean_entries,
     )
 
 
@@ -133,7 +149,7 @@ def arxiv_search(
     sort_by: Optional[str] = "relevance",
     sort_order: Optional[str] = "descending",
     include_abstracts: Optional[bool] = False,
-) -> str:
+) -> ArxivSearchResponse:
     """
     Search arXiv papers with field-specific queries.
 
@@ -157,12 +173,6 @@ def arxiv_search(
         au:vaswani AND abs:"attention is all"
         all:role OR all:playing OR all:"language model"
         (au:vaswani OR au:"del maestro") ANDNOT ti:attention
-
-    Returns a JSON object serialized to a string. The structure is:
-    {"total_count": ..., "returned_count": ..., "offset": ..., "results": [...]}
-    Every item in the "results" has the following fields:
-    ("index", "id", "title", "authors", "abstract", "published", "updated", "categories", "comment")
-    Use `json.loads` to deserialize the result if you want to get specific fields.
 
     Args:
         query: The search query, required.
@@ -211,10 +221,9 @@ def arxiv_search(
     entries = feed.get("entry", [])
     if isinstance(entries, dict):
         entries = [entries]
-    formatted_entries: str = _format_entries(
+    return _format_entries(
         entries,
         start_index=start_index,
         total_results=total_results,
         include_abstracts=include_abstracts,
     )
-    return formatted_entries
