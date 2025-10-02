@@ -28,5 +28,5 @@ async def test_document_qa_base() -> None:
 async def test_document_qa_real_question() -> None:
     questions = "What is the best model for the Russian language according to the role-play benchmark and its final score?"
     document = arxiv_download("2409.06820")
-    answer = await document_qa(question=questions, document=document)
+    answer = await document_qa(question=questions, document=document.model_dump_json())
     assert "4.62" in answer or "4.68" in answer

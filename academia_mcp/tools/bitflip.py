@@ -1,17 +1,18 @@
+# Based on
 # https://arxiv.org/abs/2504.12976
 # https://web.stanford.edu/class/cs197c/slides/02-literature-search.pdf
 
 import json
 import random
-from typing import List, Optional, Any, Dict
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel
 from datasets import load_dataset  # type: ignore
+from pydantic import BaseModel, Field
 
-from academia_mcp.tools.arxiv_download import arxiv_download
-from academia_mcp.utils import extract_json, encode_prompt
-from academia_mcp.llm import llm_acall, ChatMessage
+from academia_mcp.llm import ChatMessage, llm_acall
 from academia_mcp.settings import settings
+from academia_mcp.tools.arxiv_download import arxiv_download
+from academia_mcp.utils import encode_prompt, extract_json
 
 
 class ProposalDataset:
@@ -128,7 +129,7 @@ Return only the JSON list of proposals in this exact format:
         "spark": "4-6 word summary",
         "abstract": "An abstract that summarizes the proposal in conference format (approximately 250 words).",
         "experiments": ["...", "..."],
-        "risks_and_limitations": "A list of potential risks and limitations of the proposal."
+        "risks_and_limitations": ["...", "..."]
     },
     ...
 ]
@@ -177,12 +178,12 @@ Return only scores for all proposals in this exact format (no extra text):
 
 
 class BitFlipInfo(BaseModel):  # type: ignore
-    bit: str
-    flip: str
-    spark: str
+    bit: str = Field(description="Technical limitation or conventional approach")
+    flip: str = Field(description="Innovative approach or solution")
+    spark: str = Field(description="4-6 word summary")
 
 
-async def extract_bitflip_info(arxiv_id: str) -> str:
+async def extract_bitflip_info(arxiv_id: str) -> BitFlipInfo:
     """
     Extracts the Bit-Flip information from the arXiv paper.
 
@@ -190,20 +191,12 @@ async def extract_bitflip_info(arxiv_id: str) -> str:
     questioning existing constraints or reapplying techniques to new domains/scales.
     The "Bit" is the prevailing belief, and the "Flip" is the counterargument.
 
-    Returns a JSON object in this format:
-    {
-        "bit": "Technical limitation or conventional approach, in at least two sentences",
-        "flip": "Innovative approach or solution, in at least two sentences",
-        "spark": "4-6 word summary of the core idea"
-    }
-    Use `json.loads` to deserialize the result if you want to get specific fields.
-
     Args:
         arxiv_id: The arXiv ID of the paper to extract the Bit-Flip information from.
     """
     model_name = settings.BITFLIP_MODEL_NAME
     paper = arxiv_download(arxiv_id)
-    abstract = json.loads(paper)["abstract"]
+    abstract = paper.abstract
     prompt = encode_prompt(EXTRACT_PROMPT, abstract=abstract)
     content = await llm_acall(
         model_name=model_name,
@@ -212,12 +205,31 @@ async def extract_bitflip_info(arxiv_id: str) -> str:
     )
     result = extract_json(content)
     bitflip_info: BitFlipInfo = BitFlipInfo.model_validate(result)
-    return str(bitflip_info.model_dump_json())
+    return bitflip_info
+
+
+class ResearchProposal(BaseModel):  # type: ignore
+    proposal_id: int = Field(default=0, description="ID of the proposal")
+    flip: str = Field(description="Innovative approach or solution, in at least two sentences")
+    spark: str = Field(description="4-6 word summary")
+    abstract: str = Field(
+        description="An abstract that summarizes the proposal in conference format."
+    )
+    experiments: List[str] = Field(
+        description="A list of experiments that would be conducted to validate the proposal."
+    )
+    risks_and_limitations: List[str] = Field(
+        description="A list of potential risks and limitations of the proposal."
+    )
+
+
+class GenerateResearchProposalResponse(BaseModel):  # type: ignore
+    proposals: List[ResearchProposal] = Field(description="A list of research proposals")
 
 
 async def generate_research_proposals(
     bit: str, num_proposals: int = 3, additional_context: str = ""
-) -> str:
+) -> GenerateResearchProposalResponse:
     """
     Proposes improvement ideas for the Bit.
 
@@ -225,20 +237,6 @@ async def generate_research_proposals(
         bit: The Bit to propose improvement ideas for. The bit is a technical limitation or conventional approach of some paper.
         num_proposals: The number of proposals to generate.
         additional_context: Additional context to use when proposing the improvement idea.
-
-    Returns a JSON string with a research proposal in this format:
-    [
-        {
-            "proposal_id": ...,
-            "flip": "Innovative approach or solution, in at least two sentences",
-            "spark": "4-6 word summary",
-            "abstract": "An abstract that summarizes the proposal in conference format (approximately 250 words).",
-            "experiments": ["...", "..."],
-            "risks_and_limitations": "A list of potential risks and limitations of the proposal."
-        },
-        ...
-    ]
-    Use `json.loads` to deserialize the result if you want to get specific items.
     """
     model_name = settings.BITFLIP_MODEL_NAME
     max_completion_tokens = int(settings.BITFLIP_MAX_COMPLETION_TOKENS)
@@ -262,33 +260,34 @@ async def generate_research_proposals(
         temperature=1.0,
     )
     result = extract_json(content)
-    for proposal in result:
-        proposal["proposal_id"] = random.randint(0, 1000000)
-    return json.dumps(result, ensure_ascii=False)
+    return GenerateResearchProposalResponse(
+        proposals=[ResearchProposal.model_validate(proposal) for proposal in result]
+    )
 
 
-async def score_research_proposals(proposals: str | List[str | Dict[str, Any] | Any]) -> str:
+class ScoredProposal(BaseModel):  # type: ignore
+    proposal_id: int = Field(default=0, description="ID of the proposal")
+    spark: str = Field(description="4-6 word summary")
+    strengths: List[str] = Field(description="A list of strengths of the proposal")
+    weaknesses: List[str] = Field(description="A list of weaknesses of the proposal")
+    novelty: int = Field(description="Novelty rating from 1 to 4")
+    clarity: int = Field(description="Clarity rating from 1 to 4")
+    significance: int = Field(description="Significance rating from 1 to 4")
+    feasibility: int = Field(description="Feasibility rating from 1 to 4")
+    soundness: int = Field(description="Soundness rating from 1 to 4")
+    overall: int = Field(description="Overall rating from 1 to 10")
+
+
+class ScoreResearchProposalsResponse(BaseModel):  # type: ignore
+    proposals: List[ScoredProposal] = Field(description="List of scored proposals")
+
+
+async def score_research_proposals(
+    proposals: str | List[str | Dict[str, Any] | Any],
+) -> ScoreResearchProposalsResponse:
     """
     Scores a list of research proposals.
     Use proposals obtained with the `generate_research_proposal` tool.
-
-    Returns a JSON string with a list of scores in this format:
-    [
-        {
-            "proposal_id": 0,
-            "spark": "...",
-            "strengths": ["...", "..."],
-            "weaknesses": ["...", "..."],
-            "novelty": 2,
-            "clarity": 2,
-            "significance": 2,
-            "feasibility": 2,
-            "soundness": 2,
-            "overall": 5
-        },
-        ...
-    ]
-    Use `json.loads` to deserialize the result if you want to get specific fields.
 
     Args:
         proposals: A list of JSON strings with research proposals.
@@ -296,12 +295,16 @@ async def score_research_proposals(proposals: str | List[str | Dict[str, Any] | 
     model_name = settings.BITFLIP_MODEL_NAME
     if isinstance(proposals, str):
         proposals = json.loads(proposals)
-        assert isinstance(proposals, list), "Proposals should be a list of JSON strings"
-    prompt = encode_prompt(SCORE_PROMPT, proposals=[str(p) for p in proposals])
+        assert isinstance(proposals, list), "Proposals should be a list"
+    if isinstance(proposals, list):
+        proposals = [str(p) for p in proposals]
+    prompt = encode_prompt(SCORE_PROMPT, proposals=proposals)
     content = await llm_acall(
         model_name=model_name,
         messages=[ChatMessage(role="user", content=prompt)],
         temperature=0.0,
     )
     scores = extract_json(content)
-    return json.dumps(scores, ensure_ascii=False)
+    return ScoreResearchProposalsResponse(
+        proposals=[ScoredProposal.model_validate(score) for score in scores]
+    )

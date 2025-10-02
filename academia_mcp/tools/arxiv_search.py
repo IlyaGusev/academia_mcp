@@ -3,8 +3,8 @@
 # https://info.arxiv.org/help/api/user-manual.html
 
 import re
-from typing import Optional, List, Dict, Any, Union
-from datetime import datetime, date
+from datetime import date, datetime
+from typing import Any, Dict, List, Optional, Union
 
 import xmltodict
 from pydantic import BaseModel, Field
@@ -30,10 +30,10 @@ class ArxivSearchEntry(BaseModel):  # type: ignore
 
 
 class ArxivSearchResponse(BaseModel):  # type: ignore
-    total_count: int = Field(description="The total number of results")
-    returned_count: int = Field(description="The number of results returned")
-    offset: int = Field(description="The offset of the results")
-    results: List[ArxivSearchEntry] = Field(description="The results, search entries")
+    total_count: int = Field(description="Total number of results")
+    returned_count: int = Field(description="Number of results returned")
+    offset: int = Field(description="Offset for pagination")
+    results: List[ArxivSearchEntry] = Field(description="Search entries")
 
 
 def _format_text_field(text: str) -> str:

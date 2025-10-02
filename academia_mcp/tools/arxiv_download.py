@@ -3,19 +3,17 @@
 # https://github.com/bytedance/pasa/blob/main/utils.py
 
 import re
-import json
 import tempfile
 from pathlib import Path
-from typing import Any, List, Optional, Dict
-from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
 
-import requests
 import bs4
+import requests
 from markdownify import MarkdownConverter  # type: ignore
+from pydantic import BaseModel, Field
 
+from academia_mcp.pdf import download_pdf, parse_pdf_file
 from academia_mcp.utils import get_with_retries
-from academia_mcp.pdf import parse_pdf_file, download_pdf
-
 
 HTML_URL = "https://arxiv.org/html/{paper_id}"
 ABS_URL = "https://arxiv.org/abs/{paper_id}"
@@ -28,12 +26,24 @@ SECTION_STOP_WORDS = (
 )
 
 
-@dataclass
-class TOCEntry:
+class DownloadResponse(BaseModel):  # type: ignore
+    title: str = Field(description="Title of the paper")
+    abstract: str = Field(description="Abstract of the paper")
+    toc: str = Field(description="Table of Contents", default="")
+    sections: Optional[List[str]] = Field(description="Sections of the paper", default=None)
+    references: Optional[List[Dict[str, Any]]] = Field(
+        description="Parsed references from the paper", default=None
+    )
+    original_format: str = Field(
+        description="Original format of the paper (pdf or html)", default="html"
+    )
+
+
+class TOCEntry(BaseModel):  # type: ignore
     level: int
     title: str
     html_id: Optional[str] = None
-    subsections: List["TOCEntry"] = field(default_factory=list)
+    subsections: List["TOCEntry"] = Field(default_factory=list)
 
     def linearize(self) -> List["TOCEntry"]:
         entries = [self]
@@ -196,7 +206,7 @@ def _parse_citation_metadata(metas: List[str]) -> Dict[str, Any]:
     return result
 
 
-def _extract_citations(soup_biblist: bs4.element.Tag) -> List[Dict[str, Any]]:
+def _extract_references(soup_biblist: bs4.element.Tag) -> List[Dict[str, Any]]:
     extracted = []
     for li in soup_biblist.find_all("li", recursive=False):
         metas = [x.text.strip() for x in li.find_all("span", class_="ltx_bibblock")]
@@ -214,17 +224,17 @@ def _parse_html(paper_id: str) -> Dict[str, Any]:
     article = soup.article
     assert article and isinstance(article, bs4.element.Tag)
 
-    citations = []
+    references = []
     biblist_tag = article.find(class_="ltx_biblist")
     if biblist_tag and isinstance(biblist_tag, bs4.element.Tag):
-        citations = _extract_citations(biblist_tag)
+        references = _extract_references(biblist_tag)
 
     toc = _generate_toc(article)
     sections = _build_by_toc(toc, article, url)
     return {
         "toc": toc.to_str(),
         "sections": sections,
-        "citations": citations,
+        "references": references,
         "original_format": "html",
     }
 
@@ -255,36 +265,24 @@ def _parse_pdf(paper_id: str) -> Dict[str, Any]:
     return {
         "toc": "\n".join([f"Page {page_number}" for page_number in range(1, len(pages) + 1)]),
         "sections": pages,
-        "citations": [],
+        "references": [],
         "original_format": "pdf",
     }
 
 
 def arxiv_download(
     paper_id: str,
-    include_citations: Optional[bool] = False,
+    include_references: Optional[bool] = False,
     mode: Optional[str] = "html",
-) -> str:
+) -> DownloadResponse:
     """
     Downloads a paper from Arxiv and converts it to text.
     Use mode = "html" by default.
     Fall back to mode = "pdf" if there are any problems with the HTML version.
 
-    Returns a JSON with a following structure:
-    {
-        "title": "...",
-        "abstract": "...",
-        "toc": "...",
-        "sections": ["...", ...],
-        "citations": [...]
-    }
-    Use `json.loads` to deserialize the result if you want to get specific fields.
-    For example, `abstract = json.loads(arxiv_download("2409.06820v1"))`
-    The "toc" key contains Table of Contents, that sometimes has indexing for sections.
-
     Args:
         paper_id: ID of the paper on Arxiv. For instance: 2409.06820v1
-        include_citations: include "citations" in the result or not. False by default.
+        include_references: include "references" in the result or not. False by default.
         mode: Which version of paper to use. Options: ["html", "pdf"]. "html" by default.
     """
 
@@ -297,7 +295,6 @@ def arxiv_download(
     else:
         content = _parse_pdf(paper_id)
 
-    if not include_citations and "citations" in content:
-        content.pop("citations")
-
-    return json.dumps({**abs_meta, **content}, ensure_ascii=False)
+    if not include_references and "references" in content:
+        content.pop("references")
+    return DownloadResponse(**{**abs_meta, **content})

@@ -81,16 +81,16 @@ def create_server(
     logger = logging.getLogger(__name__)
 
     server.add_tool(arxiv_search, structured_output=True)
-    server.add_tool(arxiv_download)
-    server.add_tool(s2_get_citations)
-    server.add_tool(s2_get_references)
+    server.add_tool(arxiv_download, structured_output=True)
+    server.add_tool(visit_webpage, structured_output=True)
+    server.add_tool(s2_get_citations, structured_output=True)
+    server.add_tool(s2_get_references, structured_output=True)
+    server.add_tool(s2_get_info, structured_output=True)
     server.add_tool(s2_corpus_id_from_arxiv_id)
-    server.add_tool(s2_get_info)
     server.add_tool(hf_datasets_search)
     server.add_tool(anthology_search)
     server.add_tool(get_latex_template)
     server.add_tool(get_latex_templates_list)
-    server.add_tool(visit_webpage)
     server.add_tool(show_image)
     server.add_tool(yt_transcript)
 
@@ -105,20 +105,20 @@ def create_server(
 
     if not disable_web_search_tools:
         if settings.TAVILY_API_KEY:
-            server.add_tool(tavily_web_search)
+            server.add_tool(tavily_web_search, structured_output=True)
         if settings.EXA_API_KEY:
-            server.add_tool(exa_web_search)
+            server.add_tool(exa_web_search, structured_output=True)
         if settings.BRAVE_API_KEY:
-            server.add_tool(brave_web_search)
+            server.add_tool(brave_web_search, structured_output=True)
         if settings.EXA_API_KEY or settings.BRAVE_API_KEY or settings.TAVILY_API_KEY:
-            server.add_tool(web_search)
+            server.add_tool(web_search, structured_output=True)
         else:
             logger.warning("No web search tools keys are set, web_search will not be available!")
 
     if not disable_llm_tools and settings.OPENROUTER_API_KEY:
-        server.add_tool(extract_bitflip_info)
-        server.add_tool(generate_research_proposals)
-        server.add_tool(score_research_proposals)
+        server.add_tool(extract_bitflip_info, structured_output=True)
+        server.add_tool(generate_research_proposals, structured_output=True)
+        server.add_tool(score_research_proposals, structured_output=True)
         server.add_tool(document_qa)
         server.add_tool(describe_image)
         if settings.WORKSPACE_DIR:

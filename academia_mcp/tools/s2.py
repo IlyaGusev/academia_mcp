@@ -1,8 +1,9 @@
 # Based on
 # https://api.semanticscholar.org/api-docs/graph#tag/Paper-Data/operation/get_graph_get_paper_citations
 
-import json
 from typing import Optional, List, Dict, Any
+
+from pydantic import BaseModel, Field
 
 from academia_mcp.utils import get_with_retries
 
@@ -13,42 +14,58 @@ REFERENCES_URL_TEMPLATE = "https://api.semanticscholar.org/graph/v1/paper/{paper
 FIELDS = "title,authors,externalIds,venue,citationCount,publicationDate"
 
 
+class S2PaperInfo(BaseModel):  # type: ignore
+    arxiv_id: Optional[str] = Field(description="ArXiv ID of the paper", default=None)
+    external_ids: Optional[Dict[str, Any]] = Field(
+        description="External IDs of the paper.", default=None
+    )
+    title: str = Field(description="Paper title")
+    authors: List[str] = Field(description="Authors of the paper")
+    venue: str = Field(description="Paper venue")
+    citation_count: Optional[int] = Field(description="Paper citation count", default=None)
+    publication_date: Optional[str] = Field(description="Paper publication date", default=None)
+
+
+class S2SearchResponse(BaseModel):  # type: ignore
+    total_count: int = Field(description="Total number of results.")
+    returned_count: int = Field(description="Number of results returned.")
+    offset: int = Field(description="Offset of the results.")
+    results: List[S2PaperInfo] = Field(description="Search entries")
+
+
 def _format_authors(authors: List[Dict[str, Any]]) -> List[str]:
     return [a["name"] for a in authors]
 
 
-def _clean_entry(entry: Dict[str, Any]) -> Dict[str, Any]:
+def _clean_entry(entry: Dict[str, Any]) -> S2PaperInfo:
     entry = entry["citingPaper"] if "citingPaper" in entry else entry["citedPaper"]
     external_ids = entry.get("externalIds")
     if not external_ids:
         external_ids = dict()
     external_ids.pop("CorpusId", None)
     arxiv_id = external_ids.pop("ArXiv", None)
-    return {
-        "arxiv_id": arxiv_id,
-        "external_ids": external_ids if external_ids else None,
-        "title": entry["title"],
-        "authors": _format_authors(entry["authors"]),
-        "venue": entry.get("venue", ""),
-        "citation_count": entry.get("citationCount", 0),
-        "publication_date": entry.get("publicationDate", ""),
-    }
+    return S2PaperInfo(
+        arxiv_id=arxiv_id,
+        external_ids=external_ids if external_ids else None,
+        title=entry["title"],
+        authors=_format_authors(entry["authors"]),
+        venue=entry.get("venue", ""),
+        citation_count=entry.get("citationCount"),
+        publication_date=entry.get("publicationDate"),
+    )
 
 
 def _format_entries(
     entries: List[Dict[str, Any]],
     start_index: int,
     total_results: int,
-) -> str:
+) -> S2SearchResponse:
     clean_entries = [_clean_entry(e) for e in entries]
-    return json.dumps(
-        {
-            "total_count": total_results,
-            "returned_count": len(entries),
-            "offset": start_index,
-            "results": clean_entries,
-        },
-        ensure_ascii=False,
+    return S2SearchResponse(
+        total_count=total_results,
+        returned_count=len(entries),
+        offset=start_index,
+        results=clean_entries,
     )
 
 
@@ -56,15 +73,9 @@ def s2_get_citations(
     arxiv_id: str,
     offset: Optional[int] = 0,
     limit: Optional[int] = 50,
-) -> str:
+) -> S2SearchResponse:
     """
     Get all papers that cited a given arXiv paper based on Semantic Scholar info.
-
-    Returns a JSON object serialized to a string. The structure is:
-    {"total_count": ..., "returned_count": ..., "offset": ..., "results": [...]}
-    Every item in the "results" has the following fields:
-    ("arxiv_id", "external_ids", "title", "authors", "venue", "citation_count", "publication_date")
-    Use `json.loads` to deserialize the result if you want to get specific fields.
 
     Args:
         arxiv_id: The ID of a given arXiv paper.
@@ -98,15 +109,9 @@ def s2_get_references(
     arxiv_id: str,
     offset: Optional[int] = 0,
     limit: Optional[int] = 50,
-) -> str:
+) -> S2SearchResponse:
     """
     Get all papers that were cited by a given arXiv paper (references) based on Semantic Scholar info.
-
-    Returns a JSON object serialized to a string. The structure is:
-    {"total_count": ..., "returned_count": ..., "offset": ..., "results": [...]}
-    Every item in the "results" has the following fields:
-    ("arxiv_id", "external_ids", "title", "authors", "venue", "citation_count", "publication_date")
-    Use `json.loads` to deserialize the result if you want to get specific fields.
 
     Args:
         arxiv_id: The ID of a given arXiv paper.
@@ -144,13 +149,9 @@ def s2_corpus_id_from_arxiv_id(arxiv_id: str) -> int:
     return int(result["externalIds"]["CorpusId"])
 
 
-def s2_get_info(arxiv_id: str) -> str:
+def s2_get_info(arxiv_id: str) -> S2PaperInfo:
     """
     Get the S2 info for a given arXiv ID.
-
-    Returns a JSON object serialized to a string. The structure is:
-    {"title": ..., "authors": ..., "externalIds": ..., "venue": ..., "citationCount": ..., "publicationDate": ...}
-    Use `json.loads` to deserialize the result if you want to get specific fields.
 
     Args:
         arxiv_id: The ID of a given arXiv paper.
@@ -160,4 +161,13 @@ def s2_get_info(arxiv_id: str) -> str:
         arxiv_id = arxiv_id.split("v")[0]
     paper_url = PAPER_URL_TEMPLATE.format(paper_id=f"arxiv:{arxiv_id}", fields=FIELDS)
     response = get_with_retries(paper_url)
-    return json.dumps(response.json(), ensure_ascii=False)
+    json_data = response.json()
+    return S2PaperInfo(
+        arxiv_id=json_data.get("externalIds", {}).get("ArXiv"),
+        external_ids=json_data.get("externalIds", {}),
+        title=json_data["title"],
+        authors=_format_authors(json_data["authors"]),
+        venue=json_data.get("venue", ""),
+        citation_count=int(json_data.get("citationCount", 0)),
+        publication_date=str(json_data.get("publicationDate", "")),
+    )

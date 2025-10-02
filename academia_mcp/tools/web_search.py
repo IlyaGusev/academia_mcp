@@ -1,10 +1,9 @@
-import json
-from typing import Optional, List, Tuple
+from typing import List, Optional, Tuple
 
-from academia_mcp.utils import post_with_retries, get_with_retries
+from pydantic import BaseModel, Field
+
 from academia_mcp.settings import settings
-from academia_mcp.utils import sanitize_output
-
+from academia_mcp.utils import get_with_retries, post_with_retries, sanitize_output
 
 EXA_SEARCH_URL = "https://api.exa.ai/search"
 TAVILY_SEARCH_URL = "https://api.tavily.com/search"
@@ -30,19 +29,26 @@ def _parse_domains(query: str) -> Tuple[str, List[str]]:
     return query, include_domains
 
 
+class WebSearchEntry(BaseModel):  # type: ignore
+    id: str = Field(description="ID of the search entry, usually the URL")
+    title: str = Field(description="Title of the web page")
+    content: str = Field(description="Content of the web page")
+
+
+class WebSearchResponse(BaseModel):  # type: ignore
+    results: List[WebSearchEntry] = Field(description="Results of the search")
+    search_provider: str = Field(description="Provider used to get the results")
+
+
 def web_search(
     query: str,
     limit: Optional[int] = 20,
     provider: Optional[str] = "tavily",
     include_domains: Optional[List[str]] = None,
-) -> str:
+) -> WebSearchResponse:
     """
     Search the web using Exa Search, Brave Search or Tavily and return normalized results.
     If the specified provider is not available, the function will try to use the next available provider.
-
-    Returns a JSON object serialized to a string. The structure is: {"results": [...]}
-    Every item in the "results" has at least the following fields: ("title", "url")
-    Use `json.loads` to deserialize the result if you want to get specific fields.
 
     Args:
         query: The search query, required.
@@ -81,26 +87,22 @@ def web_search(
                 provider = p
                 break
 
-    result = {}
+    result: Optional[WebSearchResponse] = None
     if provider == "exa":
-        result = json.loads(exa_web_search(query, limit, include_domains=include_domains))
+        result = exa_web_search(query, limit, include_domains=include_domains)
     elif provider == "brave":
-        result = json.loads(brave_web_search(query, limit))
+        result = brave_web_search(query, limit)
     elif provider == "tavily":
-        result = json.loads(tavily_web_search(query, limit, include_domains=include_domains))
-    result["search_provider"] = provider
-    return sanitize_output(json.dumps(result, ensure_ascii=False))
+        result = tavily_web_search(query, limit, include_domains=include_domains)
+    assert result is not None, "Error: No provider was available"
+    return result
 
 
 def tavily_web_search(
     query: str, limit: Optional[int] = 20, include_domains: Optional[List[str]] = None
-) -> str:
+) -> WebSearchResponse:
     """
     Search the web using Tavily and return results.
-
-    Returns a JSON object serialized to a string. The structure is: {"results": [...]}
-    Every item in the "results" has at least the following fields: ("title", "url")
-    Use `json.loads` to deserialize the result if you want to get specific fields.
 
     Args:
         query: The search query, required.
@@ -131,22 +133,22 @@ def tavily_web_search(
     results = response.json()["results"]
     for result in results:
         content = " ".join(result["content"].split(" ")[:40])
-        content = content.strip("., ")
+        content = sanitize_output(content.strip("., "))
         result["content"] = content
         result.pop("raw_content", None)
         result.pop("score", None)
-    return sanitize_output(json.dumps({"results": results}, ensure_ascii=False))
+    entries = [
+        WebSearchEntry(id=result["url"], title=result["title"], content=result["content"])
+        for result in results
+    ]
+    return WebSearchResponse(results=entries, search_provider="tavily")
 
 
 def exa_web_search(
     query: str, limit: Optional[int] = 20, include_domains: Optional[List[str]] = None
-) -> str:
+) -> WebSearchResponse:
     """
     Search the web using Exa and return results.
-
-    Returns a JSON object serialized to a string. The structure is: {"results": [...]}
-    Every item in the "results" has at least the following fields: ("title", "url")
-    Use `json.loads` to deserialize the result if you want to get specific fields.
 
     Args:
         query: The search query, required.
@@ -184,16 +186,17 @@ def exa_web_search(
 
     response = post_with_retries(EXA_SEARCH_URL, payload, key)
     results = response.json()["results"]
-    return sanitize_output(json.dumps({"results": results}, ensure_ascii=False))
+    entries = []
+    for result in results:
+        content = " || ".join(result["highlights"])
+        content = sanitize_output(content)
+        entries.append(WebSearchEntry(id=result["url"], title=result["title"], content=content))
+    return WebSearchResponse(results=entries, search_provider="exa")
 
 
-def brave_web_search(query: str, limit: Optional[int] = 20) -> str:
+def brave_web_search(query: str, limit: Optional[int] = 20) -> WebSearchResponse:
     """
     Search the web using Brave and return results.
-
-    Returns a JSON object serialized to a string. The structure is: {"results": [...]}
-    Every item in the "results" has at least the following fields: ("title", "url")
-    Use `json.loads` to deserialize the result if you want to get specific fields.
 
     Args:
         query: The search query, required.
@@ -212,4 +215,8 @@ def brave_web_search(query: str, limit: Optional[int] = 20) -> str:
     }
     response = get_with_retries(BRAVE_SEARCH_URL, key, params=payload)
     results = response.json()["web"]["results"]
-    return sanitize_output(json.dumps({"results": results}, ensure_ascii=False))
+    entries = []
+    for result in results:
+        content = sanitize_output(result["description"])
+        entries.append(WebSearchEntry(id=result["url"], title=result["title"], content=content))
+    return WebSearchResponse(results=entries, search_provider="brave")
