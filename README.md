@@ -35,12 +35,16 @@ make install
 ### Quickstart
 - Run over HTTP (default transport):
 ```bash
+python -m academia_mcp --transport streamable-http
+# OR
 uv run -m academia_mcp --transport streamable-http
 ```
 
 - Run over stdio (for local MCP clients like Claude Desktop):
 ```bash
 python -m academia_mcp --transport stdio
+# OR
+uv run -m academia_mcp --transport stdio
 ```
 
 Notes:
@@ -87,7 +91,7 @@ Availability notes:
 - Set one or more of `EXA_API_KEY`, `BRAVE_API_KEY`, `TAVILY_API_KEY` to enable `web_search` and provider tools.
 
 ### Environment variables
-Set as needed depending on which tools you use:
+Set as needed, depending on which tools you use:
 
 - `OPENROUTER_API_KEY`: required for LLM-related tools.
 - `BASE_URL`: override OpenRouter base URL.
@@ -117,7 +121,7 @@ docker run --rm -p 5056:5056 \
   academia_mcp
 ```
 
-Or use existing image: `phoenix120/academia_mcp`
+Or use existing image: [`phoenix120/academia_mcp`](https://hub.docker.com/repository/docker/phoenix120/academia_mcp)
 
 ### Examples
 - [Comprehensive report screencast (YouTube)](https://www.youtube.com/watch?v=4bweqQcN6w8)
