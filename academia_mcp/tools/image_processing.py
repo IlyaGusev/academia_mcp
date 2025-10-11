@@ -1,16 +1,27 @@
+import asyncio
 import base64
-from pathlib import Path
+import contextlib
+import json
+import logging
+import os
 from io import BytesIO
-from typing import Dict, Optional
+from pathlib import Path
 from textwrap import dedent
+from typing import Dict, List, Optional
 
 import httpx
+from paddleocr import PaddleOCR  # type: ignore
 from PIL import Image
+from pydantic import BaseModel
 
 from academia_mcp.files import get_workspace_dir
+from academia_mcp.llm import ChatMessage, llm_acall
 from academia_mcp.settings import settings
-from academia_mcp.llm import llm_acall, ChatMessage
 
+paddlex_logger = logging.getLogger("paddlex")
+paddleocr_logger = logging.getLogger("paddleocr")
+paddlex_logger.setLevel(logging.ERROR)
+paddleocr_logger.setLevel(logging.ERROR)
 
 DESCRIBE_PROMPTS = {
     "general": "Provide a general description of this image. Focus on the main subjects, colors, and overall scene.",
@@ -37,14 +48,45 @@ DESCRIBE_PROMPTS = {
         - If layout is multi-column or tabular, reconstruct lines top-to-bottom, left-to-right; use line breaks between blocks.
         - For any uncertain or low-confidence characters, mark with a '?' and include a note.
         - After the raw extraction, provide a clean, normalized version (fixing obvious OCR artifacts) as a separate section.
-        Return two sections:
+        Return three sections:
+        [GENERAL IMAGE DESCRIPTION]
+        ...
         [RAW TRANSCRIPTION]
         ...
-        [NORMALIZED]
+        [NORMALIZED TRANSCRIPTION]
         ...
         """
     ),
 }
+
+
+class OCRBox(BaseModel):  # type: ignore
+    poly: List[List[float]]
+    text: str
+    score: float
+
+
+async def _run_ocr(path: str) -> str:
+    def _sync_ocr(path: str) -> str:
+        with open(os.devnull, "w") as devnull:
+            with contextlib.redirect_stderr(devnull):
+                ocr = PaddleOCR(
+                    use_doc_orientation_classify=False,
+                    use_doc_unwarping=False,
+                    use_textline_orientation=False,
+                )
+                result = ocr.predict(input=path)[0]
+
+        rec_texts = result["rec_texts"]
+        rec_scores = result["rec_scores"]
+        rec_polys = result["rec_polys"]
+
+        items = []
+        for poly, text, score in zip(rec_polys, rec_texts, rec_scores):
+            items.append(OCRBox(poly=poly, text=text, score=score).model_dump())
+        return json.dumps(items)
+
+    return await asyncio.to_thread(_sync_ocr, path)
 
 
 def show_image(path: str) -> Dict[str, str]:
@@ -91,7 +133,7 @@ async def describe_image(
             - "general": General description of the image
             - "detailed": Detailed analysis of the image
             - "chess": Analysis of a chess position
-            - "text": Extract and describe text or numbers from the image
+            - "text": Extract and describe text or numbers with an OCR pipeline.
             - "custom": Custom description based on user prompt
     """
     image_base64 = show_image(path)["image_base64"]
@@ -116,4 +158,7 @@ async def describe_image(
         messages=[ChatMessage(role="user", content=content)],
         **llm_kwargs,
     )
+    if description_type == "text":
+        ocr_response = await _run_ocr(path)
+        response = f"VLM response:\n\n{response}\n\nReal OCR response:\n\n{ocr_response}"
     return response

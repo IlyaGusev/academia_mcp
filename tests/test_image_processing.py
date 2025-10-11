@@ -29,3 +29,9 @@ async def test_describe_image_base(test_image_url: str) -> None:
     result = await describe_image(test_image_url)
     assert result is not None
     assert "Interrogator" in result
+
+
+async def test_describe_image_text(test_image_url: str) -> None:
+    result = await describe_image(test_image_url, description_type="text")
+    assert result is not None
+    assert '"text": "Interrogator"' in result

@@ -14,7 +14,7 @@ from .web_search import web_search, tavily_web_search, exa_web_search, brave_web
 from .visit_webpage import visit_webpage
 from .bitflip import extract_bitflip_info, generate_research_proposals, score_research_proposals
 from .review import review_pdf_paper, download_pdf_paper, review_pdf_paper_by_url
-from .show_image import show_image, describe_image
+from .image_processing import show_image, describe_image
 from .speech_to_text import speech_to_text
 from .yt_transcript import yt_transcript
 

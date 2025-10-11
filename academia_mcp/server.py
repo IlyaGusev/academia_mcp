@@ -40,7 +40,7 @@ from academia_mcp.tools.bitflip import (
     score_research_proposals,
 )
 from academia_mcp.tools.review import review_pdf_paper, download_pdf_paper
-from academia_mcp.tools.show_image import show_image, describe_image
+from academia_mcp.tools.image_processing import show_image, describe_image
 from academia_mcp.tools.speech_to_text import speech_to_text
 from academia_mcp.tools.yt_transcript import yt_transcript
 
