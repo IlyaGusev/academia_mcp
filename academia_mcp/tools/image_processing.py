@@ -4,10 +4,11 @@ import contextlib
 import json
 import logging
 import os
+import threading
 from io import BytesIO
 from pathlib import Path
 from textwrap import dedent
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 import httpx
 from paddleocr import PaddleOCR  # type: ignore
@@ -66,25 +67,42 @@ class OCRBox(BaseModel):  # type: ignore
     score: float
 
 
-async def _run_ocr(path: str) -> str:
-    def _sync_ocr(path: str) -> str:
-        with open(os.devnull, "w") as devnull:
-            with contextlib.redirect_stderr(devnull):
-                ocr = PaddleOCR(
-                    use_doc_orientation_classify=False,
-                    use_doc_unwarping=False,
-                    use_textline_orientation=False,
-                )
-                result = ocr.predict(input=path)[0]
+class OCRSingleton:
+    instance: Optional[PaddleOCR] = None
+    lock: threading.Lock = threading.Lock()
 
-        rec_texts = result["rec_texts"]
-        rec_scores = result["rec_scores"]
-        rec_polys = result["rec_polys"]
+    @classmethod
+    def get(cls) -> PaddleOCR:
+        if cls.instance is not None:
+            return cls.instance
+        with cls.lock:
+            if cls.instance is None:
+                with open(os.devnull, "w") as devnull:
+                    with contextlib.redirect_stderr(devnull):
+                        cls.instance = PaddleOCR(
+                            use_doc_orientation_classify=False,
+                            use_doc_unwarping=False,
+                            use_textline_orientation=False,
+                        )
+        return cls.instance
 
+
+async def _run_ocr(path: str) -> Dict[str, Any]:
+    def _sync_ocr(path: str) -> Dict[str, Any]:
+        try:
+            ocr = OCRSingleton.get()
+            with open(os.devnull, "w") as devnull:
+                with contextlib.redirect_stderr(devnull):
+                    result = ocr.predict(input=path)[0]
+            rec_texts = result["rec_texts"]
+            rec_scores = result["rec_scores"]
+            rec_polys = result["rec_polys"]
+        except Exception as e:
+            return {"error": str(e)}
         items = []
         for poly, text, score in zip(rec_polys, rec_texts, rec_scores):
             items.append(OCRBox(poly=poly, text=text, score=score).model_dump())
-        return json.dumps(items)
+        return {"boxes": items}
 
     return await asyncio.to_thread(_sync_ocr, path)
 
@@ -160,5 +178,10 @@ async def describe_image(
     )
     if description_type == "text":
         ocr_response = await _run_ocr(path)
-        response = f"VLM response:\n\n{response}\n\nReal OCR response:\n\n{ocr_response}"
+        response = json.dumps(
+            {
+                "vlm_response": response,
+                "ocr_response": ocr_response if ocr_response else [],
+            }
+        )
     return response
