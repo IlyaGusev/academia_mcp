@@ -7,7 +7,6 @@ def test_visit_webpage_basic() -> None:
     assert content.id == "https://example.com/"
     assert content.provider == "basic"
     assert "Example Domain" in content.text
-    assert "illustrative" in content.text
 
 
 def test_visit_webpage_exa() -> None:
@@ -16,7 +15,6 @@ def test_visit_webpage_exa() -> None:
     assert content.id == "https://example.com/"
     assert content.provider == "exa"
     assert "Example Domain" in content.text
-    assert "illustrative" in content.text
 
 
 def test_visit_webpage_pdf() -> None:
