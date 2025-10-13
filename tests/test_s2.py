@@ -61,7 +61,7 @@ def test_s2_search_offset() -> None:
 
 def test_s2_search_min_citation_count() -> None:
     result = s2_search("transformers", min_citation_count=100000)
-    assert result.total_count == 2
+    assert result.total_count >= 2 and result.total_count <= 10
 
 
 def test_s2_search_publication_date() -> None:

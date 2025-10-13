@@ -13,7 +13,7 @@ PAPER_URL_TEMPLATE = "{base_url}/paper/{paper_id}"
 CITATIONS_URL_TEMPLATE = "{base_url}/paper/{paper_id}/citations"
 REFERENCES_URL_TEMPLATE = "{base_url}/paper/{paper_id}/references"
 SEARCH_URL_TEMPLATE = "{base_url}/paper/search"
-FIELDS = "title,authors,externalIds,venue,citationCount,publicationDate"
+FIELDS = "paperId,title,authors,externalIds,venue,citationCount,publicationDate"
 
 
 class S2PaperInfo(BaseModel):  # type: ignore
@@ -208,7 +208,7 @@ def s2_search(
     }
     if publication_date:
         payload["publicationDateOrYear"] = publication_date
-    response = get_with_retries(url, params=payload)
+    response = get_with_retries(url, params=payload, backoff_factor=10.0, num_retries=5)
     result = response.json()
     if "data" not in result:
         return S2SearchResponse(
