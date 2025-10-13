@@ -42,9 +42,9 @@ def post_with_retries(
 def get_with_retries(
     url: str,
     api_key: Optional[str] = None,
-    timeout: int = 30,
+    timeout: int = 60,
     num_retries: int = 3,
-    backoff_factor: float = 3.0,
+    backoff_factor: float = 10.0,
     params: Optional[Dict[str, Any]] = None,
 ) -> requests.Response:
     retry_strategy = Retry(

@@ -3,6 +3,7 @@ from academia_mcp.tools import (
     s2_get_references,
     s2_corpus_id_from_arxiv_id,
     s2_get_info,
+    s2_search,
 )
 
 
@@ -40,3 +41,31 @@ def test_s2_get_info() -> None:
     assert info.citation_count is not None
     assert info.publication_date is not None
     assert info.external_ids["CorpusId"] == 272593138
+
+
+def test_s2_search_base() -> None:
+    result = s2_search("transformers")
+    assert result.total_count >= 1
+    assert "transformers" in str(result.results).lower()
+    assert result.offset == 0
+    assert result.returned_count == 5
+
+
+def test_s2_search_offset() -> None:
+    result = s2_search("transformers", offset=10)
+    assert result.total_count >= 1
+    assert "transformers" in str(result.results).lower()
+    assert result.offset == 10
+    assert result.returned_count == 5
+
+
+def test_s2_search_min_citation_count() -> None:
+    result = s2_search("transformers", min_citation_count=100000)
+    assert result.total_count == 2
+
+
+def test_s2_search_publication_date() -> None:
+    result = s2_search(
+        "transformers", min_citation_count=100000, publication_date="2017-01-01:2017-12-31"
+    )
+    assert result.total_count == 1
