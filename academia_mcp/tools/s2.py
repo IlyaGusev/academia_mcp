@@ -8,10 +8,12 @@ from pydantic import BaseModel, Field
 from academia_mcp.utils import get_with_retries
 
 
-PAPER_URL_TEMPLATE = "https://api.semanticscholar.org/graph/v1/paper/{paper_id}?fields={fields}"
-CITATIONS_URL_TEMPLATE = "https://api.semanticscholar.org/graph/v1/paper/{paper_id}/citations?fields={fields}&offset={offset}&limit={limit}"
-REFERENCES_URL_TEMPLATE = "https://api.semanticscholar.org/graph/v1/paper/{paper_id}/references?fields={fields}&offset={offset}&limit={limit}"
-FIELDS = "title,authors,externalIds,venue,citationCount,publicationDate"
+BASE_URL = "https://api.semanticscholar.org/graph/v1"
+PAPER_URL_TEMPLATE = "{base_url}/paper/{paper_id}"
+CITATIONS_URL_TEMPLATE = "{base_url}/paper/{paper_id}/citations"
+REFERENCES_URL_TEMPLATE = "{base_url}/paper/{paper_id}/references"
+SEARCH_URL_TEMPLATE = "{base_url}/paper/search"
+FIELDS = "paperId,title,authors,externalIds,venue,citationCount,publicationDate"
 
 
 class S2PaperInfo(BaseModel):  # type: ignore
@@ -38,7 +40,10 @@ def _format_authors(authors: List[Dict[str, Any]]) -> List[str]:
 
 
 def _clean_entry(entry: Dict[str, Any]) -> S2PaperInfo:
-    entry = entry["citingPaper"] if "citingPaper" in entry else entry["citedPaper"]
+    if "citingPaper" in entry:
+        entry = entry["citingPaper"]
+    elif "citedPaper" in entry:
+        entry = entry["citedPaper"]
     external_ids = entry.get("externalIds")
     if not external_ids:
         external_ids = dict()
@@ -88,17 +93,17 @@ def s2_get_citations(
         arxiv_id = arxiv_id.split("v")[0]
     paper_id = f"arxiv:{arxiv_id}"
 
-    url = CITATIONS_URL_TEMPLATE.format(
-        paper_id=paper_id, fields=FIELDS, offset=offset, limit=limit
-    )
-    response = get_with_retries(url)
+    url = CITATIONS_URL_TEMPLATE.format(base_url=BASE_URL, paper_id=paper_id)
+    payload = {"fields": FIELDS, "offset": offset, "limit": limit}
+    response = get_with_retries(url, params=payload)
     result = response.json()
     entries = result["data"]
     total_count = len(result["data"]) + result["offset"]
 
     if "next" in result:
-        paper_url = PAPER_URL_TEMPLATE.format(paper_id=paper_id, fields=FIELDS)
-        paper_response = get_with_retries(paper_url)
+        paper_url = PAPER_URL_TEMPLATE.format(base_url=BASE_URL, paper_id=paper_id)
+        payload = {"fields": FIELDS}
+        paper_response = get_with_retries(paper_url, params=payload)
         paper_result = paper_response.json()
         total_count = paper_result["citationCount"]
 
@@ -123,10 +128,9 @@ def s2_get_references(
         arxiv_id = arxiv_id.split("v")[0]
     paper_id = f"arxiv:{arxiv_id}"
 
-    url = REFERENCES_URL_TEMPLATE.format(
-        paper_id=paper_id, fields=FIELDS, offset=offset, limit=limit
-    )
-    response = get_with_retries(url)
+    url = REFERENCES_URL_TEMPLATE.format(base_url=BASE_URL, paper_id=paper_id)
+    payload = {"fields": FIELDS, "offset": offset, "limit": limit}
+    response = get_with_retries(url, params=payload)
     result = response.json()
     entries = result["data"]
     total_count = len(result["data"]) + result["offset"]
@@ -143,8 +147,9 @@ def s2_corpus_id_from_arxiv_id(arxiv_id: str) -> int:
     assert isinstance(arxiv_id, str), "Error: Your arxiv_id must be a string"
     if "v" in arxiv_id:
         arxiv_id = arxiv_id.split("v")[0]
-    paper_url = PAPER_URL_TEMPLATE.format(paper_id=f"arxiv:{arxiv_id}", fields="externalIds")
-    response = get_with_retries(paper_url)
+    paper_url = PAPER_URL_TEMPLATE.format(base_url=BASE_URL, paper_id=f"arxiv:{arxiv_id}")
+    payload = {"fields": "externalIds"}
+    response = get_with_retries(paper_url, params=payload)
     result = response.json()
     return int(result["externalIds"]["CorpusId"])
 
@@ -159,8 +164,10 @@ def s2_get_info(arxiv_id: str) -> S2PaperInfo:
     assert isinstance(arxiv_id, str), "Error: Your arxiv_id must be a string"
     if "v" in arxiv_id:
         arxiv_id = arxiv_id.split("v")[0]
-    paper_url = PAPER_URL_TEMPLATE.format(paper_id=f"arxiv:{arxiv_id}", fields=FIELDS)
-    response = get_with_retries(paper_url)
+    paper_id = f"arxiv:{arxiv_id}"
+    payload = {"fields": FIELDS}
+    paper_url = PAPER_URL_TEMPLATE.format(base_url=BASE_URL, paper_id=paper_id)
+    response = get_with_retries(paper_url, params=payload)
     json_data = response.json()
     return S2PaperInfo(
         arxiv_id=json_data.get("externalIds", {}).get("ArXiv"),
@@ -171,3 +178,45 @@ def s2_get_info(arxiv_id: str) -> S2PaperInfo:
         citation_count=int(json_data.get("citationCount", 0)),
         publication_date=str(json_data.get("publicationDate", "")),
     )
+
+
+def s2_search(
+    query: str,
+    offset: int = 0,
+    limit: int = 5,
+    min_citation_count: int = 0,
+    publication_date: Optional[str] = None,
+) -> S2SearchResponse:
+    """
+    Search the S2 corpus for a given query.
+
+    Args:
+        query: The query to search for.
+        offset: The offset to scroll through results. 10 items will be skipped if offset=10. 0 by default.
+        limit: The maximum number of items to return. limit=50 by default.
+        min_citation_count: The minimum citation count to return. 0 by default.
+        publication_date: Restricts results to the given range of publication dates or years (inclusive).
+            Accepts the format <startDate>:<endDate> with each date in YYYY-MM-DD format. None by default.
+    """
+    url = SEARCH_URL_TEMPLATE.format(base_url=BASE_URL)
+    payload = {
+        "query": query,
+        "offset": offset,
+        "limit": limit,
+        "minCitationCount": min_citation_count,
+        "fields": FIELDS,
+    }
+    if publication_date:
+        payload["publicationDateOrYear"] = publication_date
+    response = get_with_retries(url, params=payload, backoff_factor=10.0, num_retries=5)
+    result = response.json()
+    if "data" not in result:
+        return S2SearchResponse(
+            total_count=0,
+            returned_count=0,
+            offset=offset if offset else 0,
+            results=[],
+        )
+    entries = result["data"]
+    total_count = result["total"]
+    return _format_entries(entries, offset if offset else 0, total_count)

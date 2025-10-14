@@ -17,6 +17,7 @@ from academia_mcp.tools.s2 import (
     s2_get_references,
     s2_corpus_id_from_arxiv_id,
     s2_get_info,
+    s2_search,
 )
 from academia_mcp.tools.hf_datasets_search import hf_datasets_search
 from academia_mcp.tools.anthology_search import anthology_search
@@ -86,6 +87,7 @@ def create_server(
     server.add_tool(s2_get_citations, structured_output=True)
     server.add_tool(s2_get_references, structured_output=True)
     server.add_tool(s2_get_info, structured_output=True)
+    server.add_tool(s2_search, structured_output=True)
     server.add_tool(s2_corpus_id_from_arxiv_id)
     server.add_tool(hf_datasets_search)
     server.add_tool(anthology_search)
