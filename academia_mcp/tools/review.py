@@ -5,8 +5,10 @@ from io import BytesIO
 from pathlib import Path
 from typing import List, Dict, Any
 
+from pydantic import BaseModel, Field
+
 from academia_mcp.pdf import parse_pdf_file_to_images, parse_pdf_file, download_pdf
-from academia_mcp.llm import llm_acall, ChatMessage
+from academia_mcp.llm import llm_acall_structured, ChatMessage
 from academia_mcp.files import get_workspace_dir
 from academia_mcp.settings import settings
 
@@ -118,25 +120,66 @@ Find problems with the paper formatting. Report them separately.
 Return the result as a JSON object in the following format:
 {
     "summary": "Summary of the paper",
-    "strengths_and_weaknesses": {
-        "quality": "Quality-related strengths and weaknesses",
-        "quality_score": ...,
-        "clarity": "Clarity-related strengths and weaknesses",
-        "clarity_score": ...,
-        "significance": "Significance-related strengths and weaknesses",
-        "significance_score": ...,
-        "originality": "Originality-related strengths and weaknesses",
-        "originality_score": ...,
+    "quality": {
+        "strengths": ["...", "..."],
+        "weaknesses": ["...", "..."],
+        "score": ...,
     },
-    "questions": "Questions and suggestions for the authors",
-    "limitations": "Limitations of the paper",
-    "overall": "Number + short description",
-    "confidence": "Number + short description",
-    "format_issues": "Format issues"
+    "clarity": {
+        "strengths": ["...", "..."],
+        "weaknesses": ["...", "..."],
+        "score": ...,
+    },
+    "significance": {
+        "strengths": ["...", "..."],
+        "weaknesses": ["...", "..."],
+        "score": ...,
+    },
+    "originality": {
+        "strengths": ["...", "..."],
+        "weaknesses": ["...", "..."],
+        "score": ...,
+    },
+    "questions": ["Questions and suggestions for the authors", "..."],
+    "limitations": ["Limitations of the paper", "..."],
+    "overall": {
+        "strengths": ["...", "..."],
+        "weaknesses": ["...", "..."],
+        "score": ...,
+    },
+    "confidence": {
+        "description": "Confidence score and its description",
+        "score": ...,
+    },
+    "format_issues": ["Format issues", "..."]
 }
 
 Always produce a correct JSON object.
 """
+
+
+class AspectItem(BaseModel):  # type: ignore
+    strengths: List[str] = Field(description="Strengths of the paper in a specific aspect")
+    weaknesses: List[str] = Field(description="Weaknesses of the paper in a specific aspect")
+    score: int = Field(description="Overall score of this aspect")
+
+
+class ConfidenceItem(BaseModel):  # type: ignore
+    description: str = Field(description="Description of the confidence score")
+    score: int = Field(description="Confidence score")
+
+
+class ReviewResponse(BaseModel):  # type: ignore
+    summary: str = Field(description="Summary of the paper")
+    quality: AspectItem = Field(description="Quality of the paper")
+    clarity: AspectItem = Field(description="Clarity of the paper")
+    significance: AspectItem = Field(description="Significance of the paper")
+    originality: AspectItem = Field(description="Originality of the paper")
+    questions: List[str] = Field(description="Questions and suggestions for the authors")
+    limitations: List[str] = Field(description="Limitations of the paper")
+    overall: AspectItem = Field(description="Overall score and its strengths and weaknesses")
+    confidence: ConfidenceItem = Field(description="Confidence score and description")
+    format_issues: List[str] = Field(description="Format issues")
 
 
 def _create_pdf_filename(pdf_url: str) -> str:
@@ -164,7 +207,7 @@ def download_pdf_paper(pdf_url: str) -> str:
     return pdf_filename
 
 
-async def review_pdf_paper(pdf_filename: str) -> str:
+async def review_pdf_paper(pdf_filename: str) -> ReviewResponse:
     """
     Review a pdf file with a paper.
     It parses the pdf file into images and then sends the images to the LLM for review.
@@ -204,16 +247,20 @@ async def review_pdf_paper(pdf_filename: str) -> str:
         }
     )
     model_name = settings.REVIEW_MODEL_NAME
-    llm_response = await llm_acall(
+    messages = [
+        ChatMessage(role="user", content=content_parts),
+    ]
+    result: ReviewResponse = await llm_acall_structured(
         model_name=model_name,
-        messages=[
-            ChatMessage(role="user", content=content_parts),
-        ],
+        messages=messages,
+        response_format=ReviewResponse,
+        max_completion_tokens=settings.REVIEW_MAX_COMPLETION_TOKENS,
+        temperature=0.1,
     )
-    return llm_response.strip()
+    return result
 
 
-async def review_pdf_paper_by_url(pdf_url: str) -> str:
+async def review_pdf_paper_by_url(pdf_url: str) -> ReviewResponse:
     """
     Review a pdf file with a paper by url.
     It downloads the pdf file and then reviews it.

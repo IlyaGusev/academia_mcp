@@ -124,7 +124,7 @@ def create_server(
         server.add_tool(document_qa)
         server.add_tool(describe_image)
         if settings.WORKSPACE_DIR:
-            server.add_tool(review_pdf_paper)
+            server.add_tool(review_pdf_paper, structured_output=True)
     else:
         logger.warning("No OpenRouter API key is set, LLM-related tools will not be available!")
 
