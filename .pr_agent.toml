@@ -1,0 +1,15 @@
+[config]
+model = "openrouter/anthropic/claude-sonnet-4.5"
+fallback_models = ["openrouter/deepseek/deepseek-v3.2-exp"]
+ai_timeout = 300
+custom_model_max_tokens = 150000
+
+[pr_description]
+extra_instructions = "Generate clear and comprehensive descriptions"
+generate_ai_title = true
+add_original_user_description = false
+publish_description_as_comment = true
+
+[pr_reviewer]
+extra_instructions = "Focus on security issues and code quality. Be concise."
+commitable_code_suggestions = true
