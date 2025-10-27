@@ -285,7 +285,7 @@ class ScoreResearchProposalsResponse(BaseModel):  # type: ignore
 
 
 async def score_research_proposals(
-    proposals: str | List[str | Dict[str, Any] | Any],
+    proposals: str | List[Dict[str, Any]] | List[Any] | List[str] | List[ResearchProposal],
 ) -> ScoreResearchProposalsResponse:
     """
     Scores a list of research proposals.
@@ -297,9 +297,9 @@ async def score_research_proposals(
     model_name = settings.BITFLIP_MODEL_NAME
     if isinstance(proposals, str):
         proposals = json.loads(proposals)
-        assert isinstance(proposals, list), "Proposals should be a list"
-    if isinstance(proposals, list):
+    if isinstance(proposals, list) and proposals:
         proposals = [str(p) for p in proposals]
+    assert isinstance(proposals, list), "Proposals should be a list"
     prompt = encode_prompt(SCORE_PROMPT, proposals=proposals)
     result: ScoreResearchProposalsResponse = await llm_acall_structured(
         model_name=model_name,

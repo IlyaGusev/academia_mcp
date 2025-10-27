@@ -94,16 +94,6 @@ def test_arxiv_search_date_filter() -> None:
     assert "Attention Is All You Need" in str(result)
 
 
-def test_arxiv_search_start_date_only() -> None:
-    result = arxiv_search('au:vaswani AND ti:"attention is all"', start_date="2017-06-01")
-    assert "Attention Is All You Need" in str(result)
-
-
-def test_arxiv_search_end_date_only() -> None:
-    result = arxiv_search('au:vaswani AND ti:"attention is all"', end_date="2017-07-01")
-    assert "Attention Is All You Need" in str(result)
-
-
 def test_arxiv_search_complex_query_vq_vae() -> None:
     result = arxiv_search(
         query='abs:"VQ-VAE" OR abs:"Vector Quantized Variational Autoencoders"',

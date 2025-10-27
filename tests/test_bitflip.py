@@ -5,28 +5,16 @@ from academia_mcp.tools.bitflip import (
 )
 
 
-async def test_bitflip_extract_info() -> None:
-    arxiv_id = "2409.06820"
-    result = await extract_bitflip_info(arxiv_id)
-    assert result is not None
-    assert result.bit
-
-
-async def test_bitflip_generate_research_proposal() -> None:
+async def test_bitflip_score_research_proposals() -> None:
     arxiv_id = "2503.07826"
     bit = (await extract_bitflip_info(arxiv_id)).bit
-    result = await generate_research_proposals(bit=bit, num_proposals=2)
-    assert result.proposals
-    assert len(result.proposals) == 2
-    assert result.proposals[0].flip
-    assert result.proposals[1].flip
-
-
-async def test_bitflip_score_research_proposals_base() -> None:
-    arxiv_id = "2503.07826"
-    bit = (await extract_bitflip_info(arxiv_id)).bit
+    assert bit
     proposals = await generate_research_proposals(bit=bit, num_proposals=2)
-    scores = await score_research_proposals(proposals)
+    assert proposals.proposals
+    assert len(proposals.proposals) == 2
+    assert proposals.proposals[0].flip
+    assert proposals.proposals[1].flip
+    scores = await score_research_proposals(proposals.proposals)
     assert scores.proposals
     assert len(scores.proposals) == 2
     assert scores.proposals[0].spark is not None
