@@ -6,6 +6,12 @@ from typing import Dict, Any, Optional
 import requests
 from jinja2 import Template
 
+USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/120.0.0.0 Safari/537.36"
+)
+
 
 def post_with_retries(
     url: str,
@@ -60,6 +66,8 @@ def get_with_retries(
     session.mount("http://", adapter)
 
     headers = {}
+    headers["Accept"] = "*/*"
+    headers["User-Agent"] = USER_AGENT
     if api_key:
         headers["x-api-key"] = api_key
         headers["x-subscription-token"] = api_key

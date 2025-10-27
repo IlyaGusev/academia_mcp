@@ -9,10 +9,10 @@ from typing import Any, Dict, List, Optional
 from datasets import load_dataset  # type: ignore
 from pydantic import BaseModel, Field
 
-from academia_mcp.llm import ChatMessage, llm_acall
+from academia_mcp.llm import ChatMessage, llm_acall_structured
 from academia_mcp.settings import settings
 from academia_mcp.tools.arxiv_download import arxiv_download
-from academia_mcp.utils import encode_prompt, extract_json
+from academia_mcp.utils import encode_prompt
 
 
 class ProposalDataset:
@@ -94,7 +94,8 @@ Then capture its essence in a Spark: brilliant summary that crackles with innova
 - Make It Automatically Verifiable: No human babysitters allowed. Your idea must prove itself through pure computational audacity.
 - Be Surgically Specific: Vague hand-waving is for amateur rebels. Describe exactly how your mad science would work.
 - Feasibility is the Key: Make it simple and executable. Try to make it reproducible.
-- Channel Your Inner Contrarian: What would happen if you took the exact opposite approach? What if you turned the problem inside-out, upside-down, or into a completely different dimension?
+- Channel Your Inner Contrarian: What would happen if you took the exact opposite approach?
+What if you turned the problem inside-out, upside-down, or into a completely different dimension?
 
 {% for example in examples %}
 ## Example {{loop.index}} of boring research
@@ -122,17 +123,19 @@ Include the evaluation metrics you would use.
 Generate {{num_proposals}} proposals.
 
 Return only the JSON list of proposals in this exact format:
-[
-    {
-        "chain_of_reasoning": "Chain of reasoning that leads to an improvement idea for this Bit. At least 5 sentences.",
-        "flip": "Your wildest, craziest, most innovative idea, in at least two sentences",
-        "spark": "4-6 word summary",
-        "abstract": "An abstract that summarizes the proposal in conference format (approximately 250 words).",
-        "experiments": ["...", "..."],
-        "risks_and_limitations": ["...", "..."]
-    },
-    ...
-]
+{
+    "proposals": [
+        {
+            "chain_of_reasoning": "Chain of reasoning that leads to an improvement idea for this Bit. At least 5 sentences.",
+            "flip": "Your wildest, craziest, most innovative idea, in at least two sentences",
+            "spark": "4-6 word summary",
+            "abstract": "An abstract that summarizes the proposal in conference format (approximately 250 words).",
+            "experiments": ["...", "..."],
+            "risks_and_limitations": ["...", "..."]
+        },
+        ...
+    ]
+}
 """
 
 
@@ -159,21 +162,23 @@ Here are the criteria:
 - "Overall": A rating from 1 to 10 (very strong reject to award quality).
 
 Return only scores for all proposals in this exact format (no extra text):
-[
-    {
-        "proposal_id": 0,
-        "spark": "...",
-        "strengths": ["...", "..."],
-        "weaknesses": ["...", "..."],
-        "novelty": 2,
-        "clarity": 2,
-        "significance": 2,
-        "feasibility": 2,
-        "soundness": 2,
-        "overall": 5
-    },
-    ...
-]
+{
+    "proposals": [
+        {
+            "proposal_id": 0,
+            "spark": "...",
+            "strengths": ["...", "..."],
+            "weaknesses": ["...", "..."],
+            "novelty": 2,
+            "clarity": 2,
+            "significance": 2,
+            "feasibility": 2,
+            "soundness": 2,
+            "overall": 5
+        },
+        ...
+    ]
+}
 """
 
 
@@ -198,13 +203,12 @@ async def extract_bitflip_info(arxiv_id: str) -> BitFlipInfo:
     paper = arxiv_download(arxiv_id)
     abstract = paper.abstract
     prompt = encode_prompt(EXTRACT_PROMPT, abstract=abstract)
-    content = await llm_acall(
+    bitflip_info: BitFlipInfo = await llm_acall_structured(
         model_name=model_name,
         messages=[ChatMessage(role="user", content=prompt)],
         temperature=0.0,
+        response_format=BitFlipInfo,
     )
-    result = extract_json(content)
-    bitflip_info: BitFlipInfo = BitFlipInfo.model_validate(result)
     return bitflip_info
 
 
@@ -250,19 +254,17 @@ async def generate_research_proposals(
         num_proposals=num_proposals,
         additional_context=additional_context,
     )
-    content = await llm_acall(
+    result: GenerateResearchProposalResponse = await llm_acall_structured(
         model_name=model_name,
         messages=[
             ChatMessage(role="system", content=SYSTEM_IMPROVEMENT_PROMPT),
             ChatMessage(role="user", content=prompt),
         ],
+        response_format=GenerateResearchProposalResponse,
         max_completion_tokens=max_completion_tokens,
         temperature=1.0,
     )
-    result = extract_json(content)
-    return GenerateResearchProposalResponse(
-        proposals=[ResearchProposal.model_validate(proposal) for proposal in result]
-    )
+    return result
 
 
 class ScoredProposal(BaseModel):  # type: ignore
@@ -299,12 +301,10 @@ async def score_research_proposals(
     if isinstance(proposals, list):
         proposals = [str(p) for p in proposals]
     prompt = encode_prompt(SCORE_PROMPT, proposals=proposals)
-    content = await llm_acall(
+    result: ScoreResearchProposalsResponse = await llm_acall_structured(
         model_name=model_name,
         messages=[ChatMessage(role="user", content=prompt)],
+        response_format=ScoreResearchProposalsResponse,
         temperature=0.0,
     )
-    scores = extract_json(content)
-    return ScoreResearchProposalsResponse(
-        proposals=[ScoredProposal.model_validate(score) for score in scores]
-    )
+    return result
