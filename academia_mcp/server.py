@@ -40,7 +40,7 @@ from academia_mcp.tools.bitflip import (
     generate_research_proposals,
     score_research_proposals,
 )
-from academia_mcp.tools.review import review_pdf_paper, download_pdf_paper
+from academia_mcp.tools.review import review_pdf_paper, download_pdf_paper, review_pdf_paper_by_url
 from academia_mcp.tools.image_processing import show_image, describe_image
 from academia_mcp.tools.speech_to_text import speech_to_text
 from academia_mcp.tools.yt_transcript import yt_transcript
@@ -125,6 +125,7 @@ def create_server(
         server.add_tool(describe_image)
         if settings.WORKSPACE_DIR:
             server.add_tool(review_pdf_paper, structured_output=True)
+            server.add_tool(review_pdf_paper_by_url, structured_output=True)
     else:
         logger.warning("No OpenRouter API key is set, LLM-related tools will not be available!")
 

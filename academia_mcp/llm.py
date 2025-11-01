@@ -40,7 +40,11 @@ async def llm_acall(model_name: str, messages: ChatMessages, **kwargs: Any) -> s
 
 
 async def llm_acall_structured(
-    model_name: str, messages: ChatMessages, response_format: type[T], **kwargs: Any
+    model_name: str,
+    messages: ChatMessages,
+    response_format: type[T],
+    num_parsing_retries: int = 3,
+    **kwargs: Any,
 ) -> T:
     key = settings.OPENROUTER_API_KEY
     assert key, "Please set OPENROUTER_API_KEY in the environment variables"
@@ -48,17 +52,25 @@ async def llm_acall_structured(
 
     client = AsyncOpenAI(base_url=base_url, api_key=key)
     converted_messages = [message.model_dump() for message in messages]
-    structured_response: T | None = (
-        (
-            await client.chat.completions.parse(
-                model=model_name,
-                messages=converted_messages,
-                response_format=response_format,
-                **kwargs,
+    for retry_index in range(num_parsing_retries):
+        try:
+            structured_response: T | None = (
+                (
+                    await client.chat.completions.parse(
+                        model=model_name,
+                        messages=converted_messages,
+                        response_format=response_format,
+                        **kwargs,
+                    )
+                )
+                .choices[0]
+                .message.parsed
             )
-        )
-        .choices[0]
-        .message.parsed
-    )
-    assert structured_response, "Structured response is None"
+            assert structured_response
+            break
+        except Exception:
+            if retry_index == num_parsing_retries - 1:
+                raise
+            continue
+    assert structured_response
     return structured_response
