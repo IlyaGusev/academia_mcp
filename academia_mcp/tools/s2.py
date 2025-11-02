@@ -76,8 +76,8 @@ def _format_entries(
 
 def s2_get_citations(
     arxiv_id: str,
-    offset: Optional[int] = 0,
-    limit: Optional[int] = 50,
+    offset: int = 0,
+    limit: int = 50,
 ) -> S2SearchResponse:
     """
     Get all papers that cited a given arXiv paper based on Semantic Scholar info.
@@ -112,8 +112,8 @@ def s2_get_citations(
 
 def s2_get_references(
     arxiv_id: str,
-    offset: Optional[int] = 0,
-    limit: Optional[int] = 50,
+    offset: int = 0,
+    limit: int = 50,
 ) -> S2SearchResponse:
     """
     Get all papers that were cited by a given arXiv paper (references) based on Semantic Scholar info.

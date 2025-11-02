@@ -70,7 +70,7 @@ def _basic_visit_webpage(url: str) -> Dict[str, Any]:
         return {"error": str(e) + "\n" + ERROR_MESSAGE}
 
 
-def visit_webpage(url: str, provider: Optional[str] = "basic") -> VisitWebpageResponse:
+def visit_webpage(url: str, provider: str = "basic") -> VisitWebpageResponse:
     """
     Visit a webpage and return the content.
     Try to use both "tavily" and "basic" providers. They might work differently for the same URL.

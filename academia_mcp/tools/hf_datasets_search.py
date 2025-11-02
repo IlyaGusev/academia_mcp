@@ -40,9 +40,9 @@ def _format_entries(entries: List[DatasetInfo]) -> str:
 def hf_datasets_search(
     query: Optional[str] = None,
     search_filter: Optional[List[str]] = None,
-    limit: Optional[int] = 5,
-    sort_by: Optional[str] = "trending_score",
-    sort_order: Optional[str] = "descending",
+    limit: int = 5,
+    sort_by: str = "trending_score",
+    sort_order: str = "descending",
 ) -> str:
     """
     Search or filter HF datasets.

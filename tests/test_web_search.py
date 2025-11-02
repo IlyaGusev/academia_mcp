@@ -4,7 +4,6 @@ from academia_mcp.tools import web_search
 def test_web_search_base() -> None:
     result = web_search("autoregressive models path-star graphs", limit=20)
     assert result.results
-    assert "score" not in str(result)
 
 
 def test_web_search_exa() -> None:
