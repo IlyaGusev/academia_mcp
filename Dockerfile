@@ -21,7 +21,12 @@ RUN apt-get install -y \
     texlive-xetex \
     texlive-luatex \
     ghostscript \
-    fontconfig
+    fontconfig \
+    latexmk \
+    texlive-latex-recommended \
+    texlive-latex-extra \
+    texlive-fonts-recommended \
+    texlive-science
 
 COPY . /app
 RUN uv sync --no-dev && rm -rf /root/.cache/uv
