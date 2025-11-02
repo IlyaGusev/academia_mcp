@@ -272,8 +272,8 @@ def _parse_pdf(paper_id: str) -> Dict[str, Any]:
 
 def arxiv_download(
     paper_id: str,
-    include_references: Optional[bool] = False,
-    mode: Optional[str] = "html",
+    include_references: bool = False,
+    mode: str = "html",
 ) -> DownloadResponse:
     """
     Downloads a paper from Arxiv and converts it to text.

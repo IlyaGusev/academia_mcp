@@ -1,7 +1,9 @@
 import json
 import re
+import os
 from datetime import datetime
 from typing import Optional, List, Dict, Any
+from contextlib import redirect_stdout, redirect_stderr
 
 from acl_anthology import Anthology
 
@@ -12,8 +14,10 @@ class AnthologySingleton:
     @classmethod
     def get(cls) -> Anthology:
         if cls.instance is None:
-            cls.instance = Anthology.from_repo()
-            cls.instance.load_all()
+            with open(os.devnull, "w") as devnull:
+                with redirect_stdout(devnull), redirect_stderr(devnull):
+                    cls.instance = Anthology.from_repo()
+                    cls.instance.load_all()
         return cls.instance
 
 
@@ -93,13 +97,13 @@ def _parse_query(query: str, paper: Any) -> bool:
 
 def anthology_search(
     query: str,
-    offset: Optional[int] = 0,
-    limit: Optional[int] = 5,
+    offset: int = 0,
+    limit: int = 5,
+    sort_by: str = "relevance",
+    sort_order: str = "descending",
+    include_abstracts: bool = False,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    sort_by: Optional[str] = "relevance",
-    sort_order: Optional[str] = "descending",
-    include_abstracts: Optional[bool] = False,
 ) -> str:
     """
     Search ACL Anthology papers with field-specific queries.
@@ -136,11 +140,11 @@ def anthology_search(
         query: The search query, required.
         offset: The offset in search results. If it is 10, the first 10 items will be skipped. 0 by default.
         limit: The maximum number of items that will be returned. limit=5 by default, limit=10 is the maximum.
-        start_date: Start date in %Y-%m-%d format. None by default.
-        end_date: End date in %Y-%m-%d format. None by default.
         sort_by: 3 options to sort by: relevance, lastUpdatedDate, submittedDate. relevance by default.
         sort_order: 2 sort orders: ascending, descending. descending by default.
         include_abstracts: include abstracts in the result or not. False by default.
+        start_date: Start date in %Y-%m-%d format. None by default.
+        end_date: End date in %Y-%m-%d format. None by default.
     """
     assert isinstance(query, str), "Error: Your search query must be a string"
     assert isinstance(offset, int), "Error: offset should be an integer"

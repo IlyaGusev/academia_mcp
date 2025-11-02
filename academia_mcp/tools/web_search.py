@@ -42,8 +42,8 @@ class WebSearchResponse(BaseModel):  # type: ignore
 
 def web_search(
     query: str,
-    limit: Optional[int] = 20,
-    provider: Optional[str] = "tavily",
+    limit: int = 20,
+    provider: str = "tavily",
     include_domains: Optional[List[str]] = None,
 ) -> WebSearchResponse:
     """
@@ -99,7 +99,7 @@ def web_search(
 
 
 def tavily_web_search(
-    query: str, limit: Optional[int] = 20, include_domains: Optional[List[str]] = None
+    query: str, limit: int = 20, include_domains: Optional[List[str]] = None
 ) -> WebSearchResponse:
     """
     Search the web using Tavily and return results.
@@ -145,7 +145,7 @@ def tavily_web_search(
 
 
 def exa_web_search(
-    query: str, limit: Optional[int] = 20, include_domains: Optional[List[str]] = None
+    query: str, limit: int = 20, include_domains: Optional[List[str]] = None
 ) -> WebSearchResponse:
     """
     Search the web using Exa and return results.
@@ -194,7 +194,7 @@ def exa_web_search(
     return WebSearchResponse(results=entries, search_provider="exa")
 
 
-def brave_web_search(query: str, limit: Optional[int] = 20) -> WebSearchResponse:
+def brave_web_search(query: str, limit: int = 20) -> WebSearchResponse:
     """
     Search the web using Brave and return results.
 
