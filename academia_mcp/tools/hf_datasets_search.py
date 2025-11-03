@@ -18,7 +18,7 @@ class HFDatasetsSearchEntry(BaseModel):  # type: ignore
 
 
 class HFDatasetsSearchResponse(BaseModel):  # type: ignore
-    results: List[Dict[str, Any]] = Field(description="List of datasets")
+    results: List[HFDatasetsSearchEntry] = Field(description="List of datasets")
 
 
 def _format_date(dt: Optional[datetime]) -> str:

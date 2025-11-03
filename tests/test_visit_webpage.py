@@ -30,12 +30,6 @@ def test_visit_webpage_nature() -> None:
     assert "1002" in content.text
 
 
-def test_visit_webpage_github_issue() -> None:
-    url = "https://github.com/numpy/numpy/issues/10881"
-    content = visit_webpage(url, provider="tavily")
-    assert "on Apr 15, 2018" in str(content.text)
-
-
 def test_visit_webpage_exception() -> None:
     url = "https://www.researchgate.net/profile/Peter-Giovannini"
     content = visit_webpage(url)

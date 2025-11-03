@@ -33,7 +33,7 @@ class AnthologySearchEntry(BaseModel):  # type: ignore
     abstract: str = Field(description="Abstract of the paper")
     published_year: int = Field(description="Published year of the paper")
     categories: str = Field(description="Categories of the paper")
-    comment: str = Field(description="Comment of the paper")
+    comment: Optional[str] = Field(description="Comment of the paper", default=None)
     url: str = Field(description="URL of the paper")
 
 

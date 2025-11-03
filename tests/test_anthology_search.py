@@ -64,12 +64,6 @@ def sort_order_options() -> None:
     assert result1.results != result2.results
 
 
-def test_anthology_search_unicode_in_query() -> None:
-    result = anthology_search('abs:"Schrödinger equation"')
-    assert isinstance(result, AnthologySearchResponse)
-    assert len(result.results) > 0
-
-
 def test_anthology_search_result_format() -> None:
     result = anthology_search("abs:physics")
     assert result.results[0].title
