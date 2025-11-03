@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, List, Literal, Optional
+from typing import List, Literal, Optional
 
 from huggingface_hub import DatasetInfo, HfApi, hf_hub_download
 from pydantic import BaseModel, Field
@@ -47,7 +47,7 @@ def _clean_entry(entry: DatasetInfo) -> HFDatasetsSearchEntry:
 
 
 def _format_entries(entries: List[DatasetInfo]) -> HFDatasetsSearchResponse:
-    clean_entries: List[Dict[str, Any]] = [_clean_entry(entry) for entry in entries]
+    clean_entries = [_clean_entry(entry) for entry in entries]
     return HFDatasetsSearchResponse(results=clean_entries)
 
 

@@ -65,7 +65,7 @@ def _clean_entry(entry: Any) -> AnthologySearchEntry:
         published_year=entry.year,
         categories=", ".join(entry.venue_ids),
         comment=entry.note if entry.note else "",
-        url=entry.pdf.url if entry.pdf else "",
+        url=entry.pdf.url if entry.pdf and hasattr(entry.pdf, "url") else "",
     )
 
 
