@@ -1,12 +1,11 @@
 # Based on
 # https://api.semanticscholar.org/api-docs/graph#tag/Paper-Data/operation/get_graph_get_paper_citations
 
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
 from academia_mcp.utils import get_with_retries
-
 
 BASE_URL = "https://api.semanticscholar.org/graph/v1"
 PAPER_URL_TEMPLATE = "{base_url}/paper/{paper_id}"
@@ -135,23 +134,6 @@ def s2_get_references(
     entries = result["data"]
     total_count = len(result["data"]) + result["offset"]
     return _format_entries(entries, offset if offset else 0, total_count)
-
-
-def s2_corpus_id_from_arxiv_id(arxiv_id: str) -> int:
-    """
-    Get the S2 Corpus ID for a given arXiv ID.
-
-    Args:
-        arxiv_id: The ID of a given arXiv paper.
-    """
-    assert isinstance(arxiv_id, str), "Error: Your arxiv_id must be a string"
-    if "v" in arxiv_id:
-        arxiv_id = arxiv_id.split("v")[0]
-    paper_url = PAPER_URL_TEMPLATE.format(base_url=BASE_URL, paper_id=f"arxiv:{arxiv_id}")
-    payload = {"fields": "externalIds"}
-    response = get_with_retries(paper_url, params=payload)
-    result = response.json()
-    return int(result["externalIds"]["CorpusId"])
 
 
 def s2_get_info(arxiv_id: str) -> S2PaperInfo:

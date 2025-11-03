@@ -1,9 +1,9 @@
 from pathlib import Path
 from typing import List
 
-from pypdf import PdfReader
-from PIL import Image
 import pymupdf  # type: ignore
+from PIL import Image
+from pypdf import PdfReader
 
 from academia_mcp.utils import get_with_retries
 
