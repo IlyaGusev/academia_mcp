@@ -1,10 +1,24 @@
-import json
 from datetime import datetime
-from typing import Optional, List, Dict, Any, Literal
+from typing import List, Literal, Optional
 
-from huggingface_hub import HfApi, DatasetInfo, hf_hub_download
+from huggingface_hub import DatasetInfo, HfApi, hf_hub_download
+from pydantic import BaseModel, Field
 
 HF_API = HfApi()
+
+
+class HFDatasetsSearchEntry(BaseModel):  # type: ignore
+    id: str = Field(description="ID of the dataset")
+    created_at: str = Field(description="Created date of the dataset")
+    last_modified: str = Field(description="Last modified date of the dataset")
+    downloads: int = Field(description="Downloads of the dataset")
+    likes: int = Field(description="Likes of the dataset")
+    tags: List[str] = Field(description="Tags of the dataset")
+    readme: str = Field(description="README of the dataset")
+
+
+class HFDatasetsSearchResponse(BaseModel):  # type: ignore
+    results: List[HFDatasetsSearchEntry] = Field(description="List of datasets")
 
 
 def _format_date(dt: Optional[datetime]) -> str:
@@ -13,7 +27,7 @@ def _format_date(dt: Optional[datetime]) -> str:
     return dt.strftime("%B %d, %Y")
 
 
-def _clean_entry(entry: DatasetInfo) -> Dict[str, Any]:
+def _clean_entry(entry: DatasetInfo) -> HFDatasetsSearchEntry:
     try:
         readme_path = hf_hub_download(repo_id=entry.id, repo_type="dataset", filename="README.md")
         with open(readme_path, "r", encoding="utf-8") as f:
@@ -21,20 +35,20 @@ def _clean_entry(entry: DatasetInfo) -> Dict[str, Any]:
     except Exception:
         readme_content = ""
 
-    return {
-        "id": entry.id,
-        "created_at": _format_date(entry.created_at),
-        "last_modified": _format_date(entry.last_modified),
-        "downloads": entry.downloads,
-        "likes": entry.likes,
-        "tags": entry.tags,
-        "readme": readme_content,
-    }
+    return HFDatasetsSearchEntry(
+        id=entry.id,
+        created_at=_format_date(entry.created_at),
+        last_modified=_format_date(entry.last_modified),
+        downloads=entry.downloads,
+        likes=entry.likes,
+        tags=entry.tags,
+        readme=readme_content,
+    )
 
 
-def _format_entries(entries: List[DatasetInfo]) -> str:
-    clean_entries: List[Dict[str, Any]] = [_clean_entry(entry) for entry in entries]
-    return json.dumps({"results": clean_entries}, ensure_ascii=False)
+def _format_entries(entries: List[DatasetInfo]) -> HFDatasetsSearchResponse:
+    clean_entries = [_clean_entry(entry) for entry in entries]
+    return HFDatasetsSearchResponse(results=clean_entries)
 
 
 def hf_datasets_search(
@@ -43,7 +57,7 @@ def hf_datasets_search(
     limit: int = 5,
     sort_by: str = "trending_score",
     sort_order: str = "descending",
-) -> str:
+) -> HFDatasetsSearchResponse:
     """
     Search or filter HF datasets.
 
@@ -53,11 +67,6 @@ def hf_datasets_search(
 
         List all recent datasets with "text" in their name
         hf_datasets_search(query="text", sort_by="last_modified")
-
-    Returns a JSON object serialized to a string. The structure is: {"results": [...]}
-    Every item in the "results" has the following fields:
-    ("id", "created_at", "last_modified", "downloads", "likes", "tags")
-    Use `json.loads` to deserialize the result if you want to get specific fields.
 
     Args:
         query: The search query for the exact match search.

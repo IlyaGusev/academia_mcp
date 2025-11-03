@@ -1,7 +1,6 @@
 from academia_mcp.tools import (
     s2_get_citations,
     s2_get_references,
-    s2_corpus_id_from_arxiv_id,
     s2_get_info,
     s2_search,
 )
@@ -26,10 +25,6 @@ def test_s2_citations_reversed() -> None:
 def test_s2_citations_versions() -> None:
     citations = s2_get_citations("2409.06820v4")
     assert citations.total_count >= 1
-
-
-def test_s2_corpus_id_from_arxiv_id() -> None:
-    assert s2_corpus_id_from_arxiv_id("2409.06820") == 272593138
 
 
 def test_s2_get_info() -> None:

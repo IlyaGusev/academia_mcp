@@ -1,11 +1,10 @@
-from typing import List, Dict, Any, TypeVar
+from typing import Any, Dict, List, TypeVar
 
-from pydantic import BaseModel
 from openai import AsyncOpenAI
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
+from pydantic import BaseModel
 
 from academia_mcp.settings import settings
-
 
 T = TypeVar("T", bound=BaseModel)
 

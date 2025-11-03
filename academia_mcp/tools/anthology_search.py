@@ -1,11 +1,11 @@
-import json
-import re
 import os
+import re
+from contextlib import redirect_stderr, redirect_stdout
 from datetime import datetime
-from typing import Optional, List, Dict, Any
-from contextlib import redirect_stdout, redirect_stderr
+from typing import Any, List, Optional
 
 from acl_anthology import Anthology
+from pydantic import BaseModel, Field
 
 
 class AnthologySingleton:
@@ -26,6 +26,24 @@ SORT_BY_MAPPING = {"submittedDate": "published"}
 SORT_ORDER_OPTIONS = ("ascending", "descending")
 
 
+class AnthologySearchEntry(BaseModel):  # type: ignore
+    id: str = Field(description="ID of the paper")
+    title: str = Field(description="Title of the paper")
+    authors: str = Field(description="Authors of the paper")
+    abstract: str = Field(description="Abstract of the paper")
+    published_year: int = Field(description="Published year of the paper")
+    categories: str = Field(description="Categories of the paper")
+    comment: Optional[str] = Field(description="Comment of the paper", default=None)
+    url: str = Field(description="URL of the paper")
+
+
+class AnthologySearchResponse(BaseModel):  # type: ignore
+    total_count: int = Field(description="Total number of results")
+    returned_count: int = Field(description="Number of results returned")
+    offset: int = Field(description="Offset for pagination")
+    results: List[AnthologySearchEntry] = Field(description="Search entries")
+
+
 def _format_text_field(text: str) -> str:
     return " ".join([line.strip() for line in text.split() if line.strip()])
 
@@ -38,17 +56,17 @@ def _format_authors(authors: List[Any]) -> str:
     return result
 
 
-def _clean_entry(entry: Any) -> Dict[str, Any]:
-    return {
-        "id": entry.full_id,
-        "title": _format_text_field(entry.title.as_text()),
-        "authors": _format_authors(entry.authors),
-        "abstract": (_format_text_field(entry.abstract.as_text()) if entry.abstract else ""),
-        "published_year": entry.year,
-        "categories": ", ".join(entry.venue_ids),
-        "comment": entry.note if entry.note else "",
-        "url": entry.pdf.url if entry.pdf else "",
-    }
+def _clean_entry(entry: Any) -> AnthologySearchEntry:
+    return AnthologySearchEntry(
+        id=entry.full_id,
+        title=_format_text_field(entry.title.as_text()),
+        authors=_format_authors(entry.authors),
+        abstract=(_format_text_field(entry.abstract.as_text()) if entry.abstract else ""),
+        published_year=entry.year,
+        categories=", ".join(entry.venue_ids),
+        comment=entry.note if entry.note else "",
+        url=entry.pdf.url if entry.pdf and hasattr(entry.pdf, "url") else "",
+    )
 
 
 def _convert_to_year(date_str: str) -> int:
@@ -104,7 +122,7 @@ def anthology_search(
     include_abstracts: bool = False,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-) -> str:
+) -> AnthologySearchResponse:
     """
     Search ACL Anthology papers with field-specific queries.
 
@@ -129,12 +147,6 @@ def anthology_search(
         au:vaswani AND ti:"attention is all"
         all:role OR all:playing OR all:"language model"
         (au:vaswani OR au:"del maestro") ANDNOT ti:attention
-
-    Return a JSON object serialized to a string. The structure is:
-    {"total_count": ..., "returned_count": ..., "offset": ..., "results": [...]}
-    Every item in the "results" has the following fields:
-    ("index", "id", "title", "authors", "abstract", "published", "updated", "categories", "comment")
-    You can use `json.loads` to deserialize the result and get specific fields.
 
     Args:
         query: The search query, required.
@@ -182,12 +194,9 @@ def anthology_search(
     paged_papers = filtered_papers[offset : offset + limit]
     clean_entries = [_clean_entry(entry) for entry in paged_papers]
 
-    return json.dumps(
-        {
-            "total_count": len(filtered_papers),
-            "returned_count": len(paged_papers),
-            "offset": offset,
-            "results": clean_entries,
-        },
-        ensure_ascii=False,
+    return AnthologySearchResponse(
+        total_count=len(filtered_papers),
+        returned_count=len(paged_papers),
+        offset=offset,
+        results=clean_entries,
     )

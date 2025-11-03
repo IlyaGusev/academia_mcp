@@ -1,48 +1,42 @@
-import socket
 import logging
+import socket
 from logging.config import dictConfig
-from typing import Optional, Literal
+from typing import Literal, Optional
 
 import fire  # type: ignore
-from mcp.server.fastmcp import FastMCP
 import uvicorn
-from uvicorn.config import LOGGING_CONFIG as UVICORN_LOGGING_CONFIG
+from mcp.server.fastmcp import FastMCP
 from starlette.middleware.cors import CORSMiddleware
+from uvicorn.config import LOGGING_CONFIG as UVICORN_LOGGING_CONFIG
 
 from academia_mcp.settings import settings
-from academia_mcp.tools.arxiv_search import arxiv_search
-from academia_mcp.tools.arxiv_download import arxiv_download
-from academia_mcp.tools.s2 import (
-    s2_get_citations,
-    s2_get_references,
-    s2_corpus_id_from_arxiv_id,
-    s2_get_info,
-    s2_search,
-)
-from academia_mcp.tools.hf_datasets_search import hf_datasets_search
 from academia_mcp.tools.anthology_search import anthology_search
+from academia_mcp.tools.arxiv_download import arxiv_download
+from academia_mcp.tools.arxiv_search import arxiv_search
+from academia_mcp.tools.bitflip import (
+    extract_bitflip_info,
+    generate_research_proposals,
+    score_research_proposals,
+)
 from academia_mcp.tools.document_qa import document_qa
+from academia_mcp.tools.hf_datasets_search import hf_datasets_search
+from academia_mcp.tools.image_processing import describe_image, show_image
 from academia_mcp.tools.latex import (
     compile_latex,
     get_latex_template,
     get_latex_templates_list,
     read_pdf,
 )
-from academia_mcp.tools.web_search import (
-    web_search,
-    tavily_web_search,
-    exa_web_search,
-    brave_web_search,
-)
-from academia_mcp.tools.visit_webpage import visit_webpage
-from academia_mcp.tools.bitflip import (
-    extract_bitflip_info,
-    generate_research_proposals,
-    score_research_proposals,
-)
-from academia_mcp.tools.review import review_pdf_paper, download_pdf_paper, review_pdf_paper_by_url
-from academia_mcp.tools.image_processing import show_image, describe_image
+from academia_mcp.tools.review import download_pdf_paper, review_pdf_paper, review_pdf_paper_by_url
+from academia_mcp.tools.s2 import s2_get_citations, s2_get_info, s2_get_references, s2_search
 from academia_mcp.tools.speech_to_text import speech_to_text
+from academia_mcp.tools.visit_webpage import visit_webpage
+from academia_mcp.tools.web_search import (
+    brave_web_search,
+    exa_web_search,
+    tavily_web_search,
+    web_search,
+)
 from academia_mcp.tools.yt_transcript import yt_transcript
 
 
@@ -88,11 +82,10 @@ def create_server(
     server.add_tool(s2_get_references, structured_output=True)
     server.add_tool(s2_get_info, structured_output=True)
     server.add_tool(s2_search, structured_output=True)
-    server.add_tool(s2_corpus_id_from_arxiv_id)
-    server.add_tool(hf_datasets_search)
-    server.add_tool(anthology_search)
-    server.add_tool(get_latex_template)
-    server.add_tool(get_latex_templates_list)
+    server.add_tool(hf_datasets_search, structured_output=True)
+    server.add_tool(anthology_search, structured_output=True)
+    server.add_tool(get_latex_templates_list, structured_output=True)
+    server.add_tool(get_latex_template, structured_output=True)
     server.add_tool(show_image)
     server.add_tool(yt_transcript)
 

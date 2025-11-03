@@ -1,33 +1,41 @@
-import re
-import subprocess
-import shutil
-import tempfile
 import json
+import re
+import shutil
+import subprocess
+import tempfile
 from pathlib import Path
+from typing import List
 
+from pydantic import BaseModel, Field
 
-from academia_mcp.files import get_workspace_dir, DEFAULT_LATEX_TEMPLATES_DIR_PATH
+from academia_mcp.files import (
+    DEFAULT_LATEX_TEMPLATES_DIR_PATH,
+    get_workspace_dir,
+)
 from academia_mcp.pdf import parse_pdf_file
 
 
-def get_latex_templates_list() -> str:
+class GetLatexTemplatesListResponse(BaseModel):  # type: ignore
+    templates: List[str] = Field(description="List of available latex templates")
+
+
+def get_latex_templates_list() -> GetLatexTemplatesListResponse:
     """
     Get the list of available latex templates.
     Always use one of the templates from the list.
-
-    Returns a JSON list serialized to a string.
-    Use `json.loads` to deserialize the result.
     """
-    return json.dumps([str(path.name) for path in DEFAULT_LATEX_TEMPLATES_DIR_PATH.glob("*")])
+    templates = [str(path.name) for path in DEFAULT_LATEX_TEMPLATES_DIR_PATH.glob("*")]
+    return GetLatexTemplatesListResponse(templates=templates)
 
 
-def get_latex_template(template_name: str) -> str:
+class GetLatexTemplateResponse(BaseModel):  # type: ignore
+    template: str = Field(description="The latex template")
+    style: str = Field(description="The latex style")
+
+
+def get_latex_template(template_name: str) -> GetLatexTemplateResponse:
     """
     Get the latex template by name.
-
-    Returns a JSON object serialized to a string.
-    Use `json.loads` to deserialize the result.
-    The structure is: {"template": "...", "style": "..."}
 
     Args:
         template_name: The name of the latex template.
@@ -43,7 +51,9 @@ def get_latex_template(template_name: str) -> str:
         raise FileNotFoundError(f"Template file {template_path} not found in {template_dir_path}")
     if not style_path.exists():
         raise FileNotFoundError(f"Style file {style_path} not found in {template_dir_path}")
-    return json.dumps({"template": template_path.read_text(), "style": style_path.read_text()})
+    return GetLatexTemplateResponse(
+        template=template_path.read_text(), style=style_path.read_text()
+    )
 
 
 def compile_latex(
