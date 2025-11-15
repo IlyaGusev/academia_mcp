@@ -76,7 +76,7 @@ def _clean_entry(entry: Dict[str, Any]) -> ArxivSearchEntry:
         published=_format_date(entry["published"]),
         updated=_format_date(entry["updated"]),
         categories=_format_categories(entry.get("category", {})),
-        comment=_format_text_field(entry.get("arxiv:comment", {}).get("#text", "")),
+        comment=_format_text_field(entry.get("arxiv:comment", "")),
     )
 
 
@@ -216,8 +216,8 @@ def arxiv_search(
     parsed_content = xmltodict.parse(content)
 
     feed = parsed_content.get("feed", {})
-    total_results = int(feed.get("opensearch:totalResults", {}).get("#text", 0))
-    start_index = int(feed.get("opensearch:startIndex", {}).get("#text", 0))
+    total_results = int(feed.get("opensearch:totalResults", 0))
+    start_index = int(feed.get("opensearch:startIndex", 0))
     entries = feed.get("entry", [])
     if isinstance(entries, dict):
         entries = [entries]

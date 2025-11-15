@@ -96,7 +96,7 @@ def test_arxiv_search_date_filter() -> None:
 
 def test_arxiv_search_complex_query_vq_vae() -> None:
     result = arxiv_search(
-        query='abs:"VQ-VAE" OR abs:"Vector Quantized Variational Autoencoders"',
+        query='abs:"VQ-VAE" AND cat:"cs.LG"',
         limit=1,
         sort_by="submittedDate",
         sort_order="ascending",
@@ -107,8 +107,8 @@ def test_arxiv_search_complex_query_vq_vae() -> None:
 
 def test_arxiv_search_point_e() -> None:
     result = arxiv_search(
-        query='ti:"Point-E"',
-        limit=1,
+        query='ti:"Point-E" AND cat:"cs.CV"',
+        limit=10,
         sort_by="submittedDate",
         sort_order="ascending",
         include_abstracts=True,
