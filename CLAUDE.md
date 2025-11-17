@@ -8,7 +8,6 @@ Academia MCP is an MCP (Model Context Protocol) server that provides tools for s
 
 **Key Features:**
 - ArXiv and ACL Anthology search/download
-- OpenAlex comprehensive search (works, authors, institutions)
 - Semantic Scholar citation graphs
 - Hugging Face datasets search
 - Web search and page crawling
@@ -80,7 +79,7 @@ make publish  # Builds and publishes to PyPI
 
 The `create_server()` function in `academia_mcp/server.py` is the heart of the application:
 
-1. **Core Tools** (always available): arxiv_search, arxiv_download, anthology_search, openalex_* (OpenAlex search), s2_* (Semantic Scholar), hf_datasets_search, visit_webpage, get_latex_templates_list, show_image, yt_transcript
+1. **Core Tools** (always available): arxiv_search, arxiv_download, anthology_search, s2_* (Semantic Scholar), hf_datasets_search, visit_webpage, get_latex_templates_list, show_image, yt_transcript
 
 2. **Conditional Tool Registration** (based on environment variables):
    - `WORKSPACE_DIR` set → enables compile_latex, download_pdf_paper, read_pdf
