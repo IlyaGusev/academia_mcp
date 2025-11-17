@@ -27,6 +27,13 @@ from academia_mcp.tools.latex import (
     get_latex_templates_list,
     read_pdf,
 )
+from academia_mcp.tools.openalex import (
+    openalex_get_author,
+    openalex_get_institution,
+    openalex_get_work,
+    openalex_search_authors,
+    openalex_search_works,
+)
 from academia_mcp.tools.review import download_pdf_paper, review_pdf_paper, review_pdf_paper_by_url
 from academia_mcp.tools.s2 import s2_get_citations, s2_get_info, s2_get_references, s2_search
 from academia_mcp.tools.speech_to_text import speech_to_text
@@ -84,6 +91,11 @@ def create_server(
     server.add_tool(s2_search, structured_output=True)
     server.add_tool(hf_datasets_search, structured_output=True)
     server.add_tool(anthology_search, structured_output=True)
+    server.add_tool(openalex_search_works, structured_output=True)
+    server.add_tool(openalex_get_work, structured_output=True)
+    server.add_tool(openalex_search_authors, structured_output=True)
+    server.add_tool(openalex_get_author, structured_output=True)
+    server.add_tool(openalex_get_institution, structured_output=True)
     server.add_tool(get_latex_templates_list, structured_output=True)
     server.add_tool(get_latex_template, structured_output=True)
     server.add_tool(show_image)
