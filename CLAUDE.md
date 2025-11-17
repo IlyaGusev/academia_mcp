@@ -100,7 +100,7 @@ All tools live in `academia_mcp/tools/` and follow this pattern:
 - Tools import from shared utilities (`utils.py`, `llm.py`, `settings.py`)
 
 **Key Tool Categories:**
-- **Search tools**: arxiv_search.py, anthology_search.py, openalex.py, s2.py, hf_datasets_search.py, web_search.py
+- **Search tools**: arxiv_search.py, anthology_search.py, s2.py, hf_datasets_search.py, web_search.py
 - **Fetch/download tools**: arxiv_download.py, visit_webpage.py, review.py
 - **Document processing**: latex.py (compile_latex, read_pdf), image_processing.py
 - **LLM-powered tools**: document_qa.py, bitflip.py (research proposals), review.py

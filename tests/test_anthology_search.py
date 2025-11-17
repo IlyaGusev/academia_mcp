@@ -54,9 +54,9 @@ def test_anthology_search_sort_by_options() -> None:
         assert len(result.results) > 0
 
 
-def sort_order_options() -> None:
-    result1 = anthology_search("abs:physics", sort_order="ascending")
-    result2 = anthology_search("abs:physics", sort_order="descending")
+def test_anthology_search_sort_order_options() -> None:
+    result1 = anthology_search("abs:physics", sort_by="published", sort_order="ascending")
+    result2 = anthology_search("abs:physics", sort_by="published", sort_order="descending")
     assert isinstance(result1, AnthologySearchResponse)
     assert len(result1.results) > 0
     assert isinstance(result2, AnthologySearchResponse)
