@@ -38,6 +38,7 @@ from academia_mcp.tools.web_search import (
     web_search,
 )
 from academia_mcp.tools.yt_transcript import yt_transcript
+from academia_mcp.auth.middleware import BearerTokenAuthMiddleware
 
 logger = logging.getLogger(__name__)
 
@@ -165,8 +166,6 @@ def run(
 
         # Add auth middleware BEFORE CORS if enabled
         if settings.ENABLE_AUTH:
-            from academia_mcp.auth.middleware import BearerTokenAuthMiddleware
-
             app.add_middleware(BearerTokenAuthMiddleware)
             logger.info("Authentication enabled for streamable-http transport")
 
