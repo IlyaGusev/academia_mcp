@@ -12,6 +12,7 @@ from uvicorn.config import LOGGING_CONFIG as UVICORN_LOGGING_CONFIG
 
 from academia_mcp.settings import settings
 from academia_mcp.tools.anthology_search import anthology_search
+from mcp.server.transport_security import TransportSecuritySettings
 from academia_mcp.tools.arxiv_download import arxiv_download
 from academia_mcp.tools.arxiv_search import arxiv_search
 from academia_mcp.tools.bitflip import (
@@ -77,6 +78,7 @@ def create_server(
         streamable_http_path=streamable_http_path,
         mount_path=mount_path,
         auth=None,
+        transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
     )
     logger = logging.getLogger(__name__)
 
