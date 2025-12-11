@@ -89,19 +89,7 @@ academia_mcp auth revoke-token mcp_a1b2c3d4e5f6...
 
 #### Using Tokens
 
-Include the token in the `Authorization` header with the `Bearer` scheme:
-
-```bash
-# Using curl
-curl -H "Authorization: Bearer mcp_your_token_here" http://localhost:5056/mcp/sse
-
-# Using httpx (Python)
-import httpx
-
-headers = {"Authorization": "Bearer mcp_your_token_here"}
-async with httpx.AsyncClient() as client:
-    response = await client.get("http://localhost:5056/mcp/sse", headers=headers)
-```
+Include the token in the `Authorization` header with the `Bearer` scheme or as a query parameter apiKey.
 
 **Security Notes:**
 - Tokens are displayed only once during issuance. Store them securely.
