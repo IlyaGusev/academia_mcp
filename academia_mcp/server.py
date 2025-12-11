@@ -74,6 +74,7 @@ def create_server(
         stateless_http=stateless_http,
         streamable_http_path=streamable_http_path,
         mount_path=mount_path,
+        auth=None,
     )
     logger = logging.getLogger(__name__)
 

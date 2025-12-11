@@ -4,5 +4,7 @@ build:
   dockerBuildPath: "."
 startCommand:
   type: "http"
+  command: ["uv", "run", "python", "-m", "academia_mcp", "--transport", "streamable-http"]
 env:
   ENABLE_AUTH: "false"
+  FASTMCP_AUTH: ""
