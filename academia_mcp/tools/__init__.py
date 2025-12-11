@@ -6,6 +6,13 @@ from .document_qa import document_qa
 from .hf_datasets_search import hf_datasets_search
 from .image_processing import describe_image, show_image
 from .latex import compile_latex, get_latex_template, get_latex_templates_list, read_pdf
+from .openalex import (
+    openalex_get_author,
+    openalex_get_institution,
+    openalex_get_work,
+    openalex_search_authors,
+    openalex_search_works,
+)
 from .review import download_pdf_paper, review_pdf_paper, review_pdf_paper_by_url
 from .s2 import s2_get_citations, s2_get_info, s2_get_references, s2_search
 from .speech_to_text import speech_to_text
@@ -42,4 +49,9 @@ __all__ = [
     "describe_image",
     "speech_to_text",
     "yt_transcript",
+    "openalex_search_works",
+    "openalex_get_work",
+    "openalex_search_authors",
+    "openalex_get_author",
+    "openalex_get_institution",
 ]
