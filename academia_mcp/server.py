@@ -38,6 +38,9 @@ from academia_mcp.tools.web_search import (
     web_search,
 )
 from academia_mcp.tools.yt_transcript import yt_transcript
+from academia_mcp.auth.middleware import BearerTokenAuthMiddleware
+
+logger = logging.getLogger(__name__)
 
 
 def configure_uvicorn_style_logging(level: int = logging.INFO) -> None:
@@ -160,6 +163,12 @@ def run(
     if transport == "streamable-http":
         # Enable CORS for browser-based clients
         app = server.streamable_http_app()
+
+        # Add auth middleware BEFORE CORS if enabled
+        if settings.ENABLE_AUTH:
+            app.add_middleware(BearerTokenAuthMiddleware)
+            logger.info("Authentication enabled for streamable-http transport")
+
         app.add_middleware(
             CORSMiddleware,
             allow_origins=["*"],
