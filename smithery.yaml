@@ -5,6 +5,11 @@ build:
 startCommand:
   type: "http"
   command: ["uv", "run", "python", "-m", "academia_mcp", "--transport", "streamable-http"]
+  configSchema:
+    type: "object"
+    properties: {}
+    required: []
+  exampleConfig: {}
 env:
   ENABLE_AUTH: "false"
   FASTMCP_AUTH: ""
