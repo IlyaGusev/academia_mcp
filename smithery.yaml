@@ -4,3 +4,5 @@ build:
   dockerBuildPath: "."
 startCommand:
   type: "http"
+env:
+  ENABLE_AUTH: "false"

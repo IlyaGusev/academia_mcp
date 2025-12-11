@@ -161,7 +161,6 @@ def run(
     )
 
     if transport == "streamable-http":
-        # Enable CORS for browser-based clients
         app = server.streamable_http_app()
 
         # Add auth middleware BEFORE CORS if enabled
@@ -169,6 +168,7 @@ def run(
             app.add_middleware(BearerTokenAuthMiddleware)
             logger.info("Authentication enabled for streamable-http transport")
 
+        # Enable CORS for browser-based clients
         app.add_middleware(
             CORSMiddleware,
             allow_origins=["*"],
