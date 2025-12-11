@@ -6,7 +6,6 @@ from starlette.responses import JSONResponse
 from starlette.testclient import TestClient
 
 from academia_mcp.auth.middleware import BearerTokenAuthMiddleware
-from academia_mcp.settings import settings
 from academia_mcp.auth.models import TokenMetadata, TokenStore
 from academia_mcp.auth.token_manager import (
     generate_token,
@@ -17,6 +16,7 @@ from academia_mcp.auth.token_manager import (
     save_tokens,
     validate_token,
 )
+from academia_mcp.settings import settings
 
 
 def test_auth_generate_token_format() -> None:

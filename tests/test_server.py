@@ -1,8 +1,8 @@
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 from mcp import ClientSession, Tool
-from mcp.types import CallToolResult
 from mcp.client.streamable_http import streamablehttp_client
+from mcp.types import CallToolResult
 
 from tests.conftest import MCPServerTest
 

@@ -1,12 +1,11 @@
 import json
-from typing import List, Any, Dict
+from typing import Any, Dict, List
 
 from pydantic import BaseModel
 
 from academia_mcp.llm import llm_acall
-from academia_mcp.utils import truncate_content
 from academia_mcp.settings import settings
-
+from academia_mcp.utils import truncate_content
 
 PROMPT = """You are a helpful assistant that answers questions about documents accurately and concisely.
 Please answer the following questions based solely on the provided document.

@@ -1,9 +1,4 @@
-from academia_mcp.tools import (
-    s2_get_citations,
-    s2_get_references,
-    s2_get_info,
-    s2_search,
-)
+from academia_mcp.tools import s2_get_citations, s2_get_info, s2_get_references, s2_search
 
 
 def test_s2_citations_pingpong() -> None:

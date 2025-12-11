@@ -8,10 +8,7 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
-from academia_mcp.files import (
-    DEFAULT_LATEX_TEMPLATES_DIR_PATH,
-    get_workspace_dir,
-)
+from academia_mcp.files import DEFAULT_LATEX_TEMPLATES_DIR_PATH, get_workspace_dir
 from academia_mcp.pdf import parse_pdf_file
 
 

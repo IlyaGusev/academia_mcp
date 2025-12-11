@@ -4,9 +4,9 @@ from typing import Optional
 from rich.console import Console
 from rich.table import Table
 
-from .token_manager import issue_token as _issue_token
-from .token_manager import list_tokens as _list_tokens
-from .token_manager import revoke_token as _revoke_token
+from academia_mcp.auth.token_manager import issue_token as _issue_token
+from academia_mcp.auth.token_manager import list_tokens as _list_tokens
+from academia_mcp.auth.token_manager import revoke_token as _revoke_token
 
 
 class AuthCLI:

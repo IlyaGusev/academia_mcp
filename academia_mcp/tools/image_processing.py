@@ -8,7 +8,7 @@ import threading
 from io import BytesIO
 from pathlib import Path
 from textwrap import dedent
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 import httpx
 from paddleocr import PaddleOCR  # type: ignore

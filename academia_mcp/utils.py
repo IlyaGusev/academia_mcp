@@ -1,10 +1,10 @@
-import re
 import json
-from urllib3.util.retry import Retry
-from typing import Dict, Any, Optional
+import re
+from typing import Any, Dict, Optional
 
 import requests
 from jinja2 import Template
+from urllib3.util.retry import Retry
 
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "

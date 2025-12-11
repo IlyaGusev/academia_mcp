@@ -5,9 +5,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Optional
 
+from academia_mcp.auth.models import TokenMetadata, TokenStore
 from academia_mcp.settings import settings
-
-from .models import TokenMetadata, TokenStore
 
 logger = logging.getLogger(__name__)
 

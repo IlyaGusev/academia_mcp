@@ -1,17 +1,16 @@
 import base64
-import uuid
 import tempfile
+import uuid
 from io import BytesIO
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 from pydantic import BaseModel, Field
 
-from academia_mcp.pdf import parse_pdf_file_to_images, parse_pdf_file, download_pdf
-from academia_mcp.llm import llm_acall_structured, ChatMessage
 from academia_mcp.files import get_workspace_dir
+from academia_mcp.llm import ChatMessage, llm_acall_structured
+from academia_mcp.pdf import download_pdf, parse_pdf_file, parse_pdf_file_to_images
 from academia_mcp.settings import settings
-
 
 PROMPT = """
 You are an expert peer reviewer for top CS/ML venues (e.g., NeurIPS/ICML/ACL).

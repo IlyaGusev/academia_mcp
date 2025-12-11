@@ -1,5 +1,4 @@
-from academia_mcp.tools import document_qa, arxiv_download
-
+from academia_mcp.tools import arxiv_download, document_qa
 
 DOCUMENT1 = """
 The dominant sequence transduction models are based on complex recurrent or convolutional

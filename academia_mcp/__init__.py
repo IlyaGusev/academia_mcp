@@ -1,5 +1,6 @@
-import fire  # type: ignore
 from typing import Any
+
+import fire  # type: ignore
 
 from .auth import cli as auth_cli
 from .server import run

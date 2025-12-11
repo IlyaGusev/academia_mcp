@@ -6,13 +6,14 @@ from typing import Literal, Optional
 import fire  # type: ignore
 import uvicorn
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from uvicorn.config import LOGGING_CONFIG as UVICORN_LOGGING_CONFIG
 
+from academia_mcp.auth.middleware import BearerTokenAuthMiddleware
 from academia_mcp.settings import settings
 from academia_mcp.tools.anthology_search import anthology_search
-from mcp.server.transport_security import TransportSecuritySettings
 from academia_mcp.tools.arxiv_download import arxiv_download
 from academia_mcp.tools.arxiv_search import arxiv_search
 from academia_mcp.tools.bitflip import (
@@ -40,7 +41,6 @@ from academia_mcp.tools.web_search import (
     web_search,
 )
 from academia_mcp.tools.yt_transcript import yt_transcript
-from academia_mcp.auth.middleware import BearerTokenAuthMiddleware
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +77,6 @@ def create_server(
         stateless_http=stateless_http,
         streamable_http_path=streamable_http_path,
         mount_path=mount_path,
-        auth=None,
         transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
     )
     logger = logging.getLogger(__name__)

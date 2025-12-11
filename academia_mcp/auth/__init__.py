@@ -1,5 +1,5 @@
-from .models import TokenMetadata, TokenStore
-from .token_manager import (
+from academia_mcp.auth.models import TokenMetadata, TokenStore
+from academia_mcp.auth.token_manager import (
     generate_token,
     issue_token,
     list_tokens,
