@@ -7,6 +7,7 @@ import fire  # type: ignore
 import uvicorn
 from mcp.server.fastmcp import FastMCP
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from uvicorn.config import LOGGING_CONFIG as UVICORN_LOGGING_CONFIG
 
 from academia_mcp.settings import settings
@@ -169,6 +170,9 @@ def run(
             app.add_middleware(BearerTokenAuthMiddleware)
             logger.info("Authentication enabled for streamable-http transport")
 
+        # Allow all hosts (required for proxied environments like Smithery)
+        app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
+
         # Enable CORS for browser-based clients
         app.add_middleware(
             CORSMiddleware,
@@ -184,6 +188,7 @@ def run(
             host=server.settings.host,
             port=server.settings.port,
             log_level=server.settings.log_level.lower(),
+            forwarded_allow_ips="*",
         )
     else:
         server.run(transport=transport)
