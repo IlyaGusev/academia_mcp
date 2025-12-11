@@ -19,25 +19,37 @@ class BearerTokenAuthMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS":
             return await call_next(request)
 
-        auth_header = request.headers.get("Authorization")
-        if not auth_header:
-            logger.debug("Missing Authorization header")
-            return JSONResponse(
-                status_code=401,
-                content={"error": "Missing Authorization header"},
-                headers={"WWW-Authenticate": 'Bearer realm="MCP API"'},
-            )
+        token = None
 
-        parts = auth_header.split()
-        if len(parts) != 2 or parts[0].lower() != "bearer":
-            logger.debug(f"Invalid Authorization header format: {auth_header}")
-            return JSONResponse(
-                status_code=401,
-                content={"error": "Invalid Authorization header format. Expected: Bearer <token>"},
-                headers={"WWW-Authenticate": 'Bearer realm="MCP API"'},
-            )
+        api_key = request.query_params.get("apiKey")
+        if api_key:
+            token = api_key
+            logger.debug("Using token from apiKey query parameter")
+        else:
+            auth_header = request.headers.get("Authorization")
+            if not auth_header:
+                logger.debug("Missing Authorization header and apiKey query parameter")
+                return JSONResponse(
+                    status_code=401,
+                    content={
+                        "error": "Missing authentication. Provide either Authorization header or apiKey query parameter"
+                    },
+                    headers={"WWW-Authenticate": 'Bearer realm="MCP API"'},
+                )
 
-        token = parts[1]
+            parts = auth_header.split()
+            if len(parts) != 2 or parts[0].lower() != "bearer":
+                logger.debug(f"Invalid Authorization header format: {auth_header}")
+                return JSONResponse(
+                    status_code=401,
+                    content={
+                        "error": "Invalid Authorization header format. Expected: Bearer <token>"
+                    },
+                    headers={"WWW-Authenticate": 'Bearer realm="MCP API"'},
+                )
+
+            token = parts[1]
+            logger.debug("Using token from Authorization header")
 
         metadata = validate_token(token)
         if metadata is None:
