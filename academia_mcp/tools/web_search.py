@@ -217,8 +217,9 @@ def brave_web_search(
     results = response.json()["web"]["results"]
     entries = []
     for result in results:
-        content = sanitize_output(result["description"])
+        content = str(result["description"])
         if extra_snippets and "extra_snippets" in result:
             content += "\n\nExtra snippets:\n" + "\n".join(result["extra_snippets"])
+        content = sanitize_output(content)
         entries.append(WebSearchEntry(id=result["url"], title=result["title"], content=content))
     return WebSearchResponse(results=entries, search_provider="brave")
