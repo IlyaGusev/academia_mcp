@@ -194,13 +194,16 @@ def exa_web_search(
     return WebSearchResponse(results=entries, search_provider="exa")
 
 
-def brave_web_search(query: str, limit: int = 20) -> WebSearchResponse:
+def brave_web_search(
+    query: str, limit: int = 20, extra_snippets: bool = False
+) -> WebSearchResponse:
     """
     Search the web using Brave and return results.
 
     Args:
         query: The search query, required.
         limit: The maximum number of items to return. 20 by default, maximum 20.
+        extra_snippets: Include extra snippets in the content. False by default.
     """
     assert isinstance(query, str), "Error: Your search query must be a string"
     assert query.strip(), "Error: Your query should not be empty"
@@ -209,14 +212,13 @@ def brave_web_search(query: str, limit: int = 20) -> WebSearchResponse:
 
     key = settings.BRAVE_API_KEY or ""
     assert key, "Error: BRAVE_API_KEY is not set and no api_key was provided"
-    payload = {
-        "q": query,
-        "count": limit,
-    }
+    payload = {"q": query, "count": limit, "extra_snippets": extra_snippets}
     response = get_with_retries(BRAVE_SEARCH_URL, key, params=payload)
     results = response.json()["web"]["results"]
     entries = []
     for result in results:
         content = sanitize_output(result["description"])
+        if extra_snippets and "extra_snippets" in result:
+            content += "\n\nExtra snippets:\n" + "\n".join(result["extra_snippets"])
         entries.append(WebSearchEntry(id=result["url"], title=result["title"], content=content))
     return WebSearchResponse(results=entries, search_provider="brave")
