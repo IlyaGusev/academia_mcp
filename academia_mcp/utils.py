@@ -1,7 +1,7 @@
 import json
 import re
 from typing import Any, Dict, Optional, List
-import random
+import secrets
 from pathlib import Path
 
 import requests
@@ -78,7 +78,7 @@ def get_with_retries(
 
     proxy = None
     if proxies_list and len(proxies_list) > 0:
-        proxy_url = random.choice(proxies_list)
+        proxy_url = secrets.choice(proxies_list)
         proxy = {"http": proxy_url, "https": proxy_url}
 
     response = session.get(
