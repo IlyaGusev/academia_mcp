@@ -6,6 +6,8 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from academia_mcp.utils import get_with_retries
+from academia_mcp.settings import settings
+from academia_mcp.utils import load_proxies_from_file
 
 BASE_URL = "https://api.semanticscholar.org/graph/v1"
 PAPER_URL_TEMPLATE = "{base_url}/paper/{paper_id}"
@@ -72,6 +74,11 @@ def _format_entries(
         results=clean_entries,
     )
 
+def _load_proxy_list():
+    proxies_list = []
+    if settings.S2_PROXY_ENABLED and settings.PROXY_LIST_FILE.exists():
+        proxies_list = load_proxies_from_file(settings.PROXY_LIST_FILE)
+    return proxies_list
 
 def s2_get_citations(
     arxiv_id: str,
@@ -94,7 +101,15 @@ def s2_get_citations(
 
     url = CITATIONS_URL_TEMPLATE.format(base_url=BASE_URL, paper_id=paper_id)
     payload = {"fields": FIELDS, "offset": offset, "limit": limit}
-    response = get_with_retries(url, params=payload)
+
+    proxies_list = _load_proxy_list()
+
+    response = get_with_retries(
+        url, 
+        params=payload,
+        num_retries=settings.S2_MAX_RETRIES,
+        proxies_list=proxies_list
+    )
     result = response.json()
     entries = result["data"]
     total_count = len(result["data"]) + result["offset"]
@@ -102,7 +117,12 @@ def s2_get_citations(
     if "next" in result:
         paper_url = PAPER_URL_TEMPLATE.format(base_url=BASE_URL, paper_id=paper_id)
         payload = {"fields": FIELDS}
-        paper_response = get_with_retries(paper_url, params=payload)
+        paper_response = get_with_retries(
+            paper_url, 
+            params=payload,
+            num_retries=settings.S2_MAX_RETRIES,
+            proxies_list=proxies_list
+        )
         paper_result = paper_response.json()
         total_count = paper_result["citationCount"]
 
@@ -129,7 +149,15 @@ def s2_get_references(
 
     url = REFERENCES_URL_TEMPLATE.format(base_url=BASE_URL, paper_id=paper_id)
     payload = {"fields": FIELDS, "offset": offset, "limit": limit}
-    response = get_with_retries(url, params=payload)
+
+    proxies_list = _load_proxy_list()
+
+    response = get_with_retries(
+        url, 
+        params=payload,
+        num_retries=settings.S2_MAX_RETRIES,
+        proxies_list=proxies_list
+    )
     result = response.json()
     entries = result["data"]
     total_count = len(result["data"]) + result["offset"]
@@ -149,7 +177,15 @@ def s2_get_info(arxiv_id: str) -> S2PaperInfo:
     paper_id = f"arxiv:{arxiv_id}"
     payload = {"fields": FIELDS}
     paper_url = PAPER_URL_TEMPLATE.format(base_url=BASE_URL, paper_id=paper_id)
-    response = get_with_retries(paper_url, params=payload)
+
+    proxies_list = _load_proxy_list()
+
+    response = get_with_retries(
+        paper_url, 
+        params=payload,
+        num_retries=settings.S2_MAX_RETRIES,
+        proxies_list=proxies_list
+    )
     json_data = response.json()
     return S2PaperInfo(
         arxiv_id=json_data.get("externalIds", {}).get("ArXiv"),
@@ -190,7 +226,16 @@ def s2_search(
     }
     if publication_date:
         payload["publicationDateOrYear"] = publication_date
-    response = get_with_retries(url, params=payload, backoff_factor=10.0, num_retries=5)
+
+    proxies_list = _load_proxy_list()
+
+    response = get_with_retries(
+        url, 
+        params=payload, 
+        backoff_factor=10.0, 
+        num_retries=5,
+        proxies_list=proxies_list
+    )
     result = response.json()
     if "data" not in result:
         return S2SearchResponse(
