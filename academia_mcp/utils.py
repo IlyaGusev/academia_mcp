@@ -1,6 +1,8 @@
 import json
 import re
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
+import secrets
+from pathlib import Path
 
 import requests
 from jinja2 import Template
@@ -52,6 +54,7 @@ def get_with_retries(
     num_retries: int = 3,
     backoff_factor: float = 3.0,
     params: Optional[Dict[str, Any]] = None,
+    proxies_list: Optional[List[str]] = None,
 ) -> requests.Response:
     retry_strategy = Retry(
         total=num_retries,
@@ -73,7 +76,18 @@ def get_with_retries(
         headers["x-subscription-token"] = api_key
         headers["Authorization"] = f"Bearer {api_key}"
 
-    response = session.get(url, headers=headers, timeout=timeout, params=params)
+    proxy = None
+    if proxies_list and len(proxies_list) > 0:
+        proxy_url = secrets.choice(proxies_list)
+        proxy = {"http": proxy_url, "https": proxy_url}
+
+    response = session.get(
+        url, 
+        headers=headers, 
+        timeout=timeout, 
+        params=params,
+        proxies=proxy
+    )
     response.raise_for_status()
     return response
 
@@ -184,3 +198,35 @@ def sanitize_output(output: str) -> str:
     output = output.replace("\x85", " ")
     output = output.replace("\u0085", " ")
     return output
+
+def load_proxies_from_file(proxy_file_path: Path) -> List[str]:
+    """
+    Load proxy list from file
+    
+    File format should be one proxy per line in the format:
+        protocol://[username:password@]host:port
+    
+    Supported protocols: http, https, socks4, socks5
+    Lines starting with '#' are treated as comments
+    
+    Example:
+        http://proxy1.example.com:8080
+        https://user:pass@secure-proxy.com:3128
+        socks5://socks-proxy.com:1080
+
+    Args:
+        proxy_file_path: Path to the proxy list file
+        
+    Returns:
+        List of proxy URLs
+    """
+    if not proxy_file_path.exists():
+        return []
+    
+    with open(proxy_file_path, "r") as f:
+        proxies = [
+            line.strip()
+            for line in f.readlines()
+            if line.strip() and not line.startswith("#")
+        ]
+        return proxies
