@@ -23,14 +23,14 @@ def test_s2_citations_versions() -> None:
 
 
 def test_s2_get_info() -> None:
-    info = s2_get_info("2409.06820")
+    info = s2_get_info("2506.07296")
     assert info.title is not None
     assert info.authors is not None
     assert info.external_ids is not None
     assert info.venue is not None
     assert info.citation_count is not None
     assert info.publication_date is not None
-    assert info.external_ids["CorpusId"] == 272593138
+    assert info.external_ids["CorpusId"] == 279251825
 
 
 def test_s2_search_base() -> None:

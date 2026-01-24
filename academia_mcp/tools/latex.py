@@ -112,7 +112,9 @@ def compile_latex(
                 if bib_source_path.exists():
                     shutil.copyfile(bib_source_path, temp_dir_path / "references.bib")
                 else:
-                    (temp_dir_path / "temp.bbl").write_text("\\begin{thebibliography}{}\\end{thebibliography}")
+                    (temp_dir_path / "temp.bbl").write_text(
+                        "\\begin{thebibliography}{}\\end{thebibliography}"
+                    )
             except Exception:
                 pass
 

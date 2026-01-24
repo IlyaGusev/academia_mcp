@@ -1,8 +1,8 @@
 import json
 import re
-from typing import Any, Dict, Optional, List
 import secrets
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 import requests
 from jinja2 import Template
@@ -81,13 +81,7 @@ def get_with_retries(
         proxy_url = secrets.choice(proxies_list)
         proxy = {"http": proxy_url, "https": proxy_url}
 
-    response = session.get(
-        url, 
-        headers=headers, 
-        timeout=timeout, 
-        params=params,
-        proxies=proxy
-    )
+    response = session.get(url, headers=headers, timeout=timeout, params=params, proxies=proxy)
     response.raise_for_status()
     return response
 
@@ -199,16 +193,17 @@ def sanitize_output(output: str) -> str:
     output = output.replace("\u0085", " ")
     return output
 
+
 def load_proxies_from_file(proxy_file_path: Path) -> List[str]:
     """
     Load proxy list from file
-    
+
     File format should be one proxy per line in the format:
         protocol://[username:password@]host:port
-    
+
     Supported protocols: http, https, socks4, socks5
     Lines starting with '#' are treated as comments
-    
+
     Example:
         http://proxy1.example.com:8080
         https://user:pass@secure-proxy.com:3128
@@ -216,17 +211,15 @@ def load_proxies_from_file(proxy_file_path: Path) -> List[str]:
 
     Args:
         proxy_file_path: Path to the proxy list file
-        
+
     Returns:
         List of proxy URLs
     """
     if not proxy_file_path.exists():
         return []
-    
+
     with open(proxy_file_path, "r") as f:
         proxies = [
-            line.strip()
-            for line in f.readlines()
-            if line.strip() and not line.startswith("#")
+            line.strip() for line in f.readlines() if line.strip() and not line.startswith("#")
         ]
         return proxies

@@ -5,16 +5,15 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
-from academia_mcp.utils import get_with_retries
 from academia_mcp.settings import settings
-from academia_mcp.utils import load_proxies_from_file
+from academia_mcp.utils import get_with_retries, load_proxies_from_file
 
 BASE_URL = "https://api.semanticscholar.org/graph/v1"
 PAPER_URL_TEMPLATE = "{base_url}/paper/{paper_id}"
 CITATIONS_URL_TEMPLATE = "{base_url}/paper/{paper_id}/citations"
 REFERENCES_URL_TEMPLATE = "{base_url}/paper/{paper_id}/references"
 SEARCH_URL_TEMPLATE = "{base_url}/paper/search"
-FIELDS = "paperId,title,authors,externalIds,venue,citationCount,publicationDate"
+FIELDS = "paperId,title,authors,externalIds,venue,citationCount,publicationDate,citationStyles"
 
 
 class S2PaperInfo(BaseModel):  # type: ignore
@@ -27,6 +26,7 @@ class S2PaperInfo(BaseModel):  # type: ignore
     venue: str = Field(description="Paper venue")
     citation_count: Optional[int] = Field(description="Paper citation count", default=None)
     publication_date: Optional[str] = Field(description="Paper publication date", default=None)
+    citation_styles: Optional[Dict[str, Any]] = Field(description="Citation styles", default=None)
 
 
 class S2SearchResponse(BaseModel):  # type: ignore
@@ -74,11 +74,13 @@ def _format_entries(
         results=clean_entries,
     )
 
-def _load_proxy_list():
-    proxies_list = []
+
+def _load_proxy_list() -> list[str]:
+    proxies_list: list[str] = []
     if settings.S2_PROXY_ENABLED and settings.PROXY_LIST_FILE.exists():
         proxies_list = load_proxies_from_file(settings.PROXY_LIST_FILE)
     return proxies_list
+
 
 def s2_get_citations(
     arxiv_id: str,
@@ -105,10 +107,7 @@ def s2_get_citations(
     proxies_list = _load_proxy_list()
 
     response = get_with_retries(
-        url, 
-        params=payload,
-        num_retries=settings.S2_MAX_RETRIES,
-        proxies_list=proxies_list
+        url, params=payload, num_retries=settings.S2_MAX_RETRIES, proxies_list=proxies_list
     )
     result = response.json()
     entries = result["data"]
@@ -118,10 +117,10 @@ def s2_get_citations(
         paper_url = PAPER_URL_TEMPLATE.format(base_url=BASE_URL, paper_id=paper_id)
         payload = {"fields": FIELDS}
         paper_response = get_with_retries(
-            paper_url, 
+            paper_url,
             params=payload,
             num_retries=settings.S2_MAX_RETRIES,
-            proxies_list=proxies_list
+            proxies_list=proxies_list,
         )
         paper_result = paper_response.json()
         total_count = paper_result["citationCount"]
@@ -153,10 +152,7 @@ def s2_get_references(
     proxies_list = _load_proxy_list()
 
     response = get_with_retries(
-        url, 
-        params=payload,
-        num_retries=settings.S2_MAX_RETRIES,
-        proxies_list=proxies_list
+        url, params=payload, num_retries=settings.S2_MAX_RETRIES, proxies_list=proxies_list
     )
     result = response.json()
     entries = result["data"]
@@ -181,10 +177,7 @@ def s2_get_info(arxiv_id: str) -> S2PaperInfo:
     proxies_list = _load_proxy_list()
 
     response = get_with_retries(
-        paper_url, 
-        params=payload,
-        num_retries=settings.S2_MAX_RETRIES,
-        proxies_list=proxies_list
+        paper_url, params=payload, num_retries=settings.S2_MAX_RETRIES, proxies_list=proxies_list
     )
     json_data = response.json()
     return S2PaperInfo(
@@ -195,6 +188,7 @@ def s2_get_info(arxiv_id: str) -> S2PaperInfo:
         venue=json_data.get("venue", ""),
         citation_count=int(json_data.get("citationCount", 0)),
         publication_date=str(json_data.get("publicationDate", "")),
+        citation_styles=json_data.get("citationStyles", {}),
     )
 
 
@@ -230,11 +224,7 @@ def s2_search(
     proxies_list = _load_proxy_list()
 
     response = get_with_retries(
-        url, 
-        params=payload, 
-        backoff_factor=10.0, 
-        num_retries=5,
-        proxies_list=proxies_list
+        url, params=payload, backoff_factor=10.0, num_retries=5, proxies_list=proxies_list
     )
     result = response.json()
     if "data" not in result:
