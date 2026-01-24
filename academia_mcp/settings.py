@@ -28,6 +28,13 @@ class Settings(BaseSettings):
     PORT: int = 5056
     WORKSPACE_DIR: Optional[Path] = None
 
+    ENABLE_AUTH: bool = False
+    TOKENS_FILE: Path = Path.cwd() / "tokens.json"
+
+    S2_PROXY_ENABLED: bool = False
+    S2_MAX_RETRIES: int = 3
+    PROXY_LIST_FILE: Path = Path.cwd() / "proxies.txt"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

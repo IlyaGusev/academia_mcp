@@ -3,8 +3,8 @@ from io import BytesIO
 import httpx
 from PIL import Image
 
-from academia_mcp.tools import show_image, describe_image
 from academia_mcp.files import get_workspace_dir
+from academia_mcp.tools import describe_image, show_image
 
 
 def test_show_image_base(test_image_url: str) -> None:

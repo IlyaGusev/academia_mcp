@@ -51,6 +51,52 @@ Notes:
 - Transports: `stdio`, `sse`, `streamable-http`.
 - `host`/`port` are used for HTTP transports; ignored for `stdio`. Default port is `5056` (or `PORT`).
 
+### Authentication
+
+Academia MCP supports optional token-based authentication for HTTP transports (`streamable-http` and `sse`). Authentication is disabled by default to maintain backward compatibility.
+
+#### Enabling Authentication
+
+Set the `ENABLE_AUTH` environment variable to `true`:
+
+```bash
+export ENABLE_AUTH=true
+export TOKENS_FILE=/path/to/tokens.json  # Optional, defaults to ./tokens.json
+```
+
+#### Managing Tokens
+
+Issue a new token:
+```bash
+academia_mcp auth issue-token --client-id=my-client --description="Production API client"
+
+# Issue token with 30-day expiration
+academia_mcp auth issue-token --client-id=test-client --expires-days=30
+
+# Issue token with custom scopes
+academia_mcp auth issue-token --client-id=admin --scopes="read,write,admin"
+```
+
+List active tokens:
+```bash
+academia_mcp auth list-tokens
+```
+
+Revoke a token:
+```bash
+academia_mcp auth revoke-token mcp_a1b2c3d4e5f6...
+```
+
+#### Using Tokens
+
+Include the token in the `Authorization` header with the `Bearer` scheme or as a query parameter apiKey.
+
+**Security Notes:**
+- Tokens are displayed only once during issuance. Store them securely.
+- Use HTTPS in production to protect tokens in transit.
+- The `tokens.json` file is automatically created with restrictive permissions (mode 600).
+- Tokens are stored in plaintext (standard practice for bearer tokens) - protect the tokens file.
+
 ### Claude Desktop config
 ```json
 {

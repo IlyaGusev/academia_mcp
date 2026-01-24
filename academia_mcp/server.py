@@ -6,9 +6,12 @@ from typing import Literal, Optional
 import fire  # type: ignore
 import uvicorn
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from uvicorn.config import LOGGING_CONFIG as UVICORN_LOGGING_CONFIG
 
+from academia_mcp.auth.middleware import BearerTokenAuthMiddleware
 from academia_mcp.settings import settings
 from academia_mcp.tools.anthology_search import anthology_search
 from academia_mcp.tools.arxiv_download import arxiv_download
@@ -46,6 +49,8 @@ from academia_mcp.tools.web_search import (
 )
 from academia_mcp.tools.yt_transcript import yt_transcript
 
+logger = logging.getLogger(__name__)
+
 
 def configure_uvicorn_style_logging(level: int = logging.INFO) -> None:
     config = {**UVICORN_LOGGING_CONFIG}
@@ -79,6 +84,7 @@ def create_server(
         stateless_http=stateless_http,
         streamable_http_path=streamable_http_path,
         mount_path=mount_path,
+        transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
     )
     logger = logging.getLogger(__name__)
 
@@ -170,8 +176,17 @@ def run(
     )
 
     if transport == "streamable-http":
-        # Enable CORS for browser-based clients
         app = server.streamable_http_app()
+
+        # Add auth middleware BEFORE CORS if enabled
+        if settings.ENABLE_AUTH:
+            app.add_middleware(BearerTokenAuthMiddleware)
+            logger.info("Authentication enabled for streamable-http transport")
+
+        # Allow all hosts (required for proxied environments like Smithery)
+        app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
+
+        # Enable CORS for browser-based clients
         app.add_middleware(
             CORSMiddleware,
             allow_origins=["*"],
@@ -186,6 +201,7 @@ def run(
             host=server.settings.host,
             port=server.settings.port,
             log_level=server.settings.log_level.lower(),
+            forwarded_allow_ips="*",
         )
     else:
         server.run(transport=transport)

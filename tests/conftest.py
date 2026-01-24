@@ -1,11 +1,11 @@
-import pytest
 import asyncio
 import threading
 import time
-from pathlib import Path
 from contextlib import suppress
+from pathlib import Path
 from typing import Generator
 
+import pytest
 import uvicorn
 from sse_starlette.sse import AppStatus
 

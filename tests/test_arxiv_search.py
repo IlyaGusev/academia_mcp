@@ -51,7 +51,7 @@ def test_arxiv_search_sort_by_options() -> None:
         assert result.total_count > 0
 
 
-def sort_order_options() -> None:
+def test_arxiv_search_sort_order_options() -> None:
     result1 = arxiv_search("abs:physics", sort_order="ascending")
     result2 = arxiv_search("abs:physics", sort_order="descending")
     assert result1.total_count > 0

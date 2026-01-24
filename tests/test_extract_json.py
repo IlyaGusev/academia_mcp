@@ -1,5 +1,6 @@
-import pytest
 from unittest import TestCase
+
+import pytest
 
 from academia_mcp.utils import extract_json
 

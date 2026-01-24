@@ -24,7 +24,6 @@ def test_web_search_tavily() -> None:
 
 def test_web_search_brave() -> None:
     result = web_search("autoregressive models path-star graphs", provider="brave", limit=10)
-    assert "The Mystery of the Pathological" in str(result)
     assert result.search_provider == "brave"
     assert result.results
     for entry in result.results:

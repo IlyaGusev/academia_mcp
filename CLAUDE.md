@@ -8,7 +8,6 @@ Academia MCP is an MCP (Model Context Protocol) server that provides tools for s
 
 **Key Features:**
 - ArXiv and ACL Anthology search/download
-- OpenAlex comprehensive search (works, authors, institutions)
 - Semantic Scholar citation graphs
 - Hugging Face datasets search
 - Web search and page crawling
@@ -80,7 +79,7 @@ make publish  # Builds and publishes to PyPI
 
 The `create_server()` function in `academia_mcp/server.py` is the heart of the application:
 
-1. **Core Tools** (always available): arxiv_search, arxiv_download, anthology_search, openalex_* (OpenAlex search), s2_* (Semantic Scholar), hf_datasets_search, visit_webpage, get_latex_templates_list, show_image, yt_transcript
+1. **Core Tools** (always available): arxiv_search, arxiv_download, anthology_search, s2_* (Semantic Scholar), hf_datasets_search, visit_webpage, get_latex_templates_list, show_image, yt_transcript
 
 2. **Conditional Tool Registration** (based on environment variables):
    - `WORKSPACE_DIR` set → enables compile_latex, download_pdf_paper, read_pdf
@@ -101,7 +100,7 @@ All tools live in `academia_mcp/tools/` and follow this pattern:
 - Tools import from shared utilities (`utils.py`, `llm.py`, `settings.py`)
 
 **Key Tool Categories:**
-- **Search tools**: arxiv_search.py, anthology_search.py, openalex.py, s2.py, hf_datasets_search.py, web_search.py
+- **Search tools**: arxiv_search.py, anthology_search.py, s2.py, hf_datasets_search.py, web_search.py
 - **Fetch/download tools**: arxiv_download.py, visit_webpage.py, review.py
 - **Document processing**: latex.py (compile_latex, read_pdf), image_processing.py
 - **LLM-powered tools**: document_qa.py, bitflip.py (research proposals), review.py
@@ -112,7 +111,83 @@ Uses `pydantic-settings` to load configuration from `.env` file or environment v
 - API keys: OPENROUTER_API_KEY, TAVILY_API_KEY, EXA_API_KEY, BRAVE_API_KEY, OPENAI_API_KEY
 - Model names: REVIEW_MODEL_NAME, BITFLIP_MODEL_NAME, DOCUMENT_QA_MODEL_NAME, DESCRIBE_IMAGE_MODEL_NAME
 - Workspace: WORKSPACE_DIR (Path), PORT (int)
+- Authentication: ENABLE_AUTH (bool, default False), TOKENS_FILE (Path, default ./tokens.json)
 - All settings accessible via `from academia_mcp.settings import settings`
+
+### Authentication System (auth/)
+
+The authentication system provides optional token-based security for HTTP transports (streamable-http, sse).
+
+**Architecture:**
+- Integrated authentication model (single server handles both token validation and MCP tools)
+- Bearer token validation via Starlette middleware
+- Token storage in JSON file with metadata (client_id, scopes, expiration, etc.)
+- CLI commands for token lifecycle management
+
+**Key Components:**
+
+1. **Token Models** (`academia_mcp/auth/models.py`):
+   - `TokenMetadata`: Stores token_id, client_id, scopes, issued_at, expires_at, description, revoked, last_used
+   - `TokenStore`: Container for all tokens with version tracking
+   - Token format: `mcp_<32 hex chars>` (128 bits of entropy via `secrets.token_hex(16)`)
+
+2. **Token Manager** (`academia_mcp/auth/token_manager.py`):
+   - `generate_token()`: Creates cryptographically secure tokens
+   - `issue_token()`: Creates and persists new token with metadata
+   - `validate_token()`: Checks existence, revocation status, and expiration
+   - `list_tokens()`: Returns all non-revoked tokens
+   - `revoke_token()`: Marks token as revoked
+   - `update_last_used()`: Updates last usage timestamp
+   - File locking for concurrent access safety
+   - Atomic writes via temp file + rename
+
+3. **Authentication Middleware** (`academia_mcp/auth/middleware.py`):
+   - `BearerTokenAuthMiddleware`: Starlette BaseHTTPMiddleware implementation
+   - Intercepts HTTP requests before they reach MCP tools
+   - Validates `Authorization: Bearer <token>` header
+   - Returns 401 with WWW-Authenticate header on auth failures
+   - Skips OPTIONS requests (CORS preflight compatibility)
+   - Updates last_used timestamp asynchronously (non-blocking)
+
+4. **Server Integration** (`academia_mcp/server.py:165-169`):
+   - Middleware added BEFORE CORS when `ENABLE_AUTH=true`
+   - Only applies to streamable-http transport (stdio/sse unaffected by default)
+   - Logs "Authentication enabled for streamable-http transport" when active
+
+5. **CLI Commands** (`academia_mcp/auth/cli.py`):
+   - `AuthCLI` class with Fire-compatible methods
+   - `issue_token()`: Issues new token, displays ONCE with rich formatting
+   - `list_tokens()`: Displays table with token prefixes, client IDs, timestamps
+   - `revoke_token()`: Revokes token by ID
+
+**CLI Usage:**
+```bash
+# Issue token
+academia_mcp auth issue-token --client-id=my-client --description="Production"
+
+# Issue with expiration
+academia_mcp auth issue-token --client-id=test --expires-days=30
+
+# List active tokens
+academia_mcp auth list-tokens
+
+# Revoke token
+academia_mcp auth revoke-token mcp_a1b2c3d4e5f6...
+
+# Run server with auth
+ENABLE_AUTH=true academia_mcp run --transport=streamable-http
+```
+
+**Security Considerations:**
+- Tokens stored in plaintext (standard for bearer tokens) with file permissions 600
+- 128 bits of entropy for cryptographically secure token generation
+- Tokens displayed only once during issuance
+- HTTPS strongly recommended for production use
+- Last-used timestamps for audit trails
+
+**Testing:**
+- Unit tests: `tests/test_auth.py` (token manager, middleware)
+- Integration tests: `tests/test_server_auth.py` (server with auth enabled/disabled)
 
 ### LLM Integration (llm.py)
 

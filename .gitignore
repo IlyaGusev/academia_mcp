@@ -50,6 +50,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+tests/workdir/
 
 # Translations
 *.mo
@@ -169,3 +170,7 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+tokens.json
+.vscode/
+proxies.txt

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "academia-mcp"
-version = "1.12.1"
+version = "1.13.4"
 description = "MCP server that provides different tools to search for scientific publications"
 readme = "README.md"
 authors = [
@@ -35,6 +35,7 @@ dependencies = [
     "pymupdf>=1.26.4",
     "pillow>=11.3.0",
     "pydantic-settings>=2.6.0",
+    "rich>=13.0.0",
     "youtube-transcript-api>=1.2.2",
     "paddlepaddle==3.2.0",
     "paddleocr==3.2.0",

@@ -1,14 +1,16 @@
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 from mcp import ClientSession, Tool
-from mcp.types import CallToolResult
 from mcp.client.streamable_http import streamablehttp_client
+from mcp.types import CallToolResult
 
 from tests.conftest import MCPServerTest
 
 
 async def call_tool(mcp_server_test: MCPServerTest, tool: str, kwargs: Dict[str, Any]) -> Any:
-    url = f"http://{mcp_server_test.host}:{mcp_server_test.port}/mcp"
+    # Use 127.0.0.1 for client connections (0.0.0.0 is only for server binding)
+    client_host = "127.0.0.1" if mcp_server_test.host == "0.0.0.0" else mcp_server_test.host
+    url = f"http://{client_host}:{mcp_server_test.port}/mcp"
     async with streamablehttp_client(url) as (
         read_stream,
         write_stream,
@@ -21,7 +23,9 @@ async def call_tool(mcp_server_test: MCPServerTest, tool: str, kwargs: Dict[str,
 
 
 async def fetch_tools(mcp_server_test: MCPServerTest) -> List[Tool]:
-    url = f"http://{mcp_server_test.host}:{mcp_server_test.port}/mcp"
+    # Use 127.0.0.1 for client connections (0.0.0.0 is only for server binding)
+    client_host = "127.0.0.1" if mcp_server_test.host == "0.0.0.0" else mcp_server_test.host
+    url = f"http://{client_host}:{mcp_server_test.port}/mcp"
     all_tools: List[Tool] = []
     async with streamablehttp_client(url) as (
         read_stream,
