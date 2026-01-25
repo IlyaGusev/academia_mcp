@@ -11,8 +11,6 @@ AUTHORS_SEARCH_URL = f"{BASE_URL}/authors"
 AUTHOR_URL_TEMPLATE = f"{BASE_URL}/authors/{{author_id}}"
 INSTITUTION_URL_TEMPLATE = f"{BASE_URL}/institutions/{{institution_id}}"
 
-MAILTO = "academia-mcp@example.com"
-
 
 class OpenAlexAuthorInfo(BaseModel):  # type: ignore
     id: str = Field(description="OpenAlex author ID")
@@ -172,7 +170,6 @@ def openalex_search_works(
         "search": query,
         "page": (offset // limit) + 1,
         "per_page": limit,
-        "mailto": MAILTO,
     }
 
     if sort_by == "relevance":
@@ -222,14 +219,10 @@ def openalex_get_work(work_id: str) -> OpenAlexWorkEntry:
     assert work_id.strip(), "work_id cannot be empty"
 
     if work_id.startswith("10."):
-        work_id = f"doi:{work_id}"
-    elif work_id.startswith("https://doi.org/"):
-        work_id = work_id.replace("https://doi.org/", "doi:")
+        work_id = f"https://doi.org/{work_id}"
 
     url = WORK_URL_TEMPLATE.format(work_id=work_id)
-    params = {"mailto": MAILTO}
-
-    response = get_with_retries(url, params=params)
+    response = get_with_retries(url)
     work = response.json()
 
     return _extract_work_info(work)
@@ -259,7 +252,6 @@ def openalex_search_authors(
         "search": query,
         "page": (offset // limit) + 1,
         "per_page": limit,
-        "mailto": MAILTO,
     }
 
     response = get_with_retries(AUTHORS_SEARCH_URL, params=params)
@@ -293,9 +285,7 @@ def openalex_get_author(author_id: str) -> OpenAlexAuthorEntry:
         author_id = author_id.replace("https://orcid.org/", "orcid:")
 
     url = AUTHOR_URL_TEMPLATE.format(author_id=author_id)
-    params = {"mailto": MAILTO}
-
-    response = get_with_retries(url, params=params)
+    response = get_with_retries(url)
     author = response.json()
 
     return _extract_author_info(author)
@@ -318,9 +308,7 @@ def openalex_get_institution(institution_id: str) -> OpenAlexInstitutionInfo:
         institution_id = f"ror:{institution_id}"
 
     url = INSTITUTION_URL_TEMPLATE.format(institution_id=institution_id)
-    params = {"mailto": MAILTO}
-
-    response = get_with_retries(url, params=params)
+    response = get_with_retries(url)
     institution = response.json()
 
     return OpenAlexInstitutionInfo(

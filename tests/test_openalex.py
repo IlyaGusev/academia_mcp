@@ -44,9 +44,9 @@ def test_openalex_search_works_sort_by_citations() -> None:
 
 
 def test_openalex_get_work_by_doi() -> None:
-    work = openalex_get_work("10.65215/pc26a033")
+    work = openalex_get_work("10.18653/v1/d19-1410")
     assert work.title is not None
-    assert "attention" in work.title.lower()
+    assert "sentence-bert" in work.title.lower()
     assert len(work.authors) >= 1
     assert work.cited_by_count > 0
 
@@ -73,8 +73,9 @@ def test_openalex_search_authors_with_limit() -> None:
 
 
 def test_openalex_get_author_by_id() -> None:
-    author = openalex_get_author("A2208157607")
+    author = openalex_get_author("A5108093963")
     assert author.name is not None
+    assert "hinton" in author.name.lower()
     assert author.works_count > 0
     assert author.cited_by_count > 0
 
