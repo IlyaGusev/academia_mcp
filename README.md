@@ -13,7 +13,7 @@ MCP server with tools to search, fetch, analyze, and report on scientific papers
 - ACL Anthology search
 - Hugging Face datasets search
 - Semantic Scholar citations and references
-- Web search via Exa, Brave, or Tavily
+- Web search via Exa, Brave, SearXNG, or Tavily
 - Web page crawler, LaTeX compilation, PDF reading
 - Optional LLM-powered tools for document QA and research proposal workflows
 
@@ -122,8 +122,8 @@ Include the token in the `Authorization` header with the `Bearer` scheme or as a
 - `s2_get_citations`: List papers citing a given arXiv paper (Semantic Scholar Graph).
 - `s2_get_references`: List papers referenced by a given arXiv paper.
 - `visit_webpage`: Fetch and normalize a web page.
-- `web_search`: Unified search wrapper; available when at least one of Exa/Brave/Tavily keys is set.
-- `exa_web_search`, `brave_web_search`, `tavily_web_search`: Provider-specific search.
+- `web_search`: Unified search wrapper; available when at least one of Exa/Brave/SearXNG/Tavily keys is set.
+- `exa_web_search`, `brave_web_search`, `tavily_web_search`, `searxng_web_search`: Provider-specific search.
 - `get_latex_templates_list`, `get_latex_template`: Enumerate and fetch built-in LaTeX templates.
 - `compile_latex`: Compile LaTeX to PDF in `WORKSPACE_DIR`.
 - `read_pdf`: Extract text per page from a PDF.
@@ -146,6 +146,7 @@ Set as needed, depending on which tools you use:
 - `TAVILY_API_KEY`: enables Tavily in `web_search`.
 - `EXA_API_KEY`: enables Exa in `web_search` and `visit_webpage`.
 - `BRAVE_API_KEY`: enables Brave in `web_search`.
+- `SEARXNG_BASE_URL`: enables SearXNG in `web_search`.
 - `WORKSPACE_DIR`: directory for generated files (PDFs, temp artifacts).
 - `PORT`: HTTP port (default `5056`).
 

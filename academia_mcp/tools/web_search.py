@@ -53,11 +53,11 @@ def web_search(
     Args:
         query: The search query, required.
         limit: The maximum number of items to return. 20 by default, maximum 25.
-        provider: The provider to use. "exa", "tavily" or "brave". "tavily" by default.
+        provider: The provider to use. "exa", "searxng", "tavily" or "brave". "tavily" by default.
         include_domains: Optional list of domains to include in the search. None by default.
     """
-    providers = ("tavily", "brave", "exa")
-    assert provider in providers, "Error: provider must be either 'exa', 'tavily' or 'brave'"
+    providers = ("tavily", "brave", "exa", "searxng")
+    assert provider in providers, "Error: provider must be either 'exa', 'searxng', 'tavily' or 'brave'"
     if include_domains:
         assert len(include_domains) > 0, "Error: include_domains should be a non-empty list"
         assert all(
@@ -74,11 +74,13 @@ def web_search(
     is_tavily_available = bool(settings.TAVILY_API_KEY)
     is_exa_available = bool(settings.EXA_API_KEY)
     is_brave_available = bool(settings.BRAVE_API_KEY)
-    assert is_tavily_available or is_exa_available or is_brave_available
+    is_searxng_available = bool(settings.SEARXNG_BASE_URL)
+    assert is_tavily_available or is_exa_available or is_brave_available or is_searxng_available
     availability = {
         "tavily": is_tavily_available,
         "brave": is_brave_available,
         "exa": is_exa_available,
+        "searxng": is_searxng_available,
     }
 
     if not availability[provider]:
@@ -94,6 +96,8 @@ def web_search(
         result = brave_web_search(query, limit)
     elif provider == "tavily":
         result = tavily_web_search(query, limit, include_domains=include_domains)
+    elif provider == "searxng":
+        result = searxng_web_search(query, limit)
     assert result is not None, "Error: No provider was available"
     return result
 
@@ -143,6 +147,56 @@ def tavily_web_search(
     ]
     return WebSearchResponse(results=entries, search_provider="tavily")
 
+def searxng_web_search(
+    query: str, 
+    limit: int = 20
+) -> WebSearchResponse:
+    """
+    Search the web using SearXNG and return results.
+
+    Args:
+        query: The search query, required.
+        limit: The maximum number of items to return. 20 by default, maximum 100.
+    """
+    assert isinstance(query, str), "Error: Your search query must be a string"
+    assert query.strip(), "Error: Your query should not be empty"
+    assert isinstance(limit, int), "Error: limit should be an integer"
+    assert 0 < limit <= 100, "Error: limit should be between 1 and 100"
+
+    # Используем пользовательский экземпляр или публичный по умолчанию
+    base_url = settings.SEARXNG_BASE_URL
+    search_url = f"{base_url.rstrip('/')}/search"
+    
+    # Подготавливаем параметры запроса
+    params = {
+        "q": query,
+        "format": "json",
+        "pageno": 1,
+        "language": "en",
+        "safesearch": 0,
+        "count": min(limit, 100),
+    }
+    
+    response = get_with_retries(search_url, api_key=None, params=params)
+    
+    data = response.json()
+    
+    entries = []
+    for result in data.get("results", [])[:limit]:
+        content = result.get("content", "")
+        if len(content) > 1000:
+            content = content[:1000] + "..."
+        
+        title = sanitize_output(result.get("title", ""))
+        content = sanitize_output(content)
+        
+        entries.append(WebSearchEntry(
+            id=result.get("url", ""),
+            title=title,
+            content=content
+        ))
+    
+    return WebSearchResponse(results=entries, search_provider="searxng")
 
 def exa_web_search(
     query: str, limit: int = 20, include_domains: Optional[List[str]] = None

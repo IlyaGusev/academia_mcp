@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     EXA_API_KEY: Optional[str] = None
     BRAVE_API_KEY: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
+    SEARXNG_BASE_URL: Optional[str] = None
 
     REVIEW_MODEL_NAME: str = "openai/gpt-5"
     REVIEW_MAX_COMPLETION_TOKENS: int = 32768
