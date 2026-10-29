@@ -220,6 +220,7 @@ async def review_pdf_paper(pdf_filename: str) -> ReviewResponse:
         response_format=ReviewResponse,
         max_completion_tokens=settings.REVIEW_MAX_COMPLETION_TOKENS,
         temperature=0.1,
+        reasoning_effort=settings.REVIEW_REASONING_EFFORT,
     )
     return result
 

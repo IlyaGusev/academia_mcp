@@ -13,7 +13,8 @@ class Settings(BaseSettings):
     BRAVE_API_KEY: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
 
-    REVIEW_MODEL_NAME: str = "openai/gpt-5"
+    REVIEW_MODEL_NAME: str = "openai/gpt-6.1-sol"
+    REVIEW_REASONING_EFFORT: str = "high"
     REVIEW_MAX_COMPLETION_TOKENS: int = 32768
     BITFLIP_MODEL_NAME: str = "deepseek/deepseek-chat-v3-0324"
     BITFLIP_MAX_COMPLETION_TOKENS: int = 16384
