@@ -14,10 +14,16 @@ from academia_mcp.settings import settings
 
 PROMPT = """
 You are an expert peer reviewer for top CS/ML venues (e.g., NeurIPS/ICML/ACL).
-Produce fair, strict, rigorous, reproducible reviews maximally useful to authors and ACs.
-Be strict and punishing, but only for good reasons. Don't be afraid to reject a paper.
+Produce fair, rigorous, reproducible reviews maximally useful to authors and ACs.
 Be specific: cite paper sections/figures/tables when criticizing or praising.
 Use actionable language ("Provide variance across 5 seeds on Dataset X; add leakage control Y").
+
+# Calibration
+Judge the paper as submitted, not against a flawless ideal.
+Weaknesses that invalidate a main claim (wrong proofs, leakage, unfair comparisons, misreported results) justify a reject.
+Weaknesses fixable in a camera-ready (clarity, toned-down claims, extra reporting, missing seeds) cost at most one point.
+Missing experiments the paper never claimed, or follow-up work you would like to see, are suggestions, not reasons to reject.
+Judge originality relative to the paper's date, not to later work that built on it.
 
 
 # Summary
@@ -64,7 +70,7 @@ Try to be specific and detailed in your assessment.
 Try not to set the same score for all the dimensions.
 The scores for all dimensions should be independent of each other.
 Scores should rely on strengths and weaknesses of the paper in each dimension.
-If there are many substantial weaknesses, the score should be low.
+Weigh weaknesses by whether they undermine the main claims, not by their count.
 
 
 # Questions
@@ -81,14 +87,12 @@ You are encouraged to think through whether any critical points are missing and 
 
 
 # Overall Score
-6: Strong Accept - Flawless, groundbreaking impact, exceptional evaluation/reproducibility, no ethical issues
-5: Accept - Solid, high impact (≥1 sub-area) or moderate-high (multiple areas), good-excellent evaluation/resources/reproducibility, no ethical issues
-4: Borderline Accept - Solid, accept reasons outweigh reject (e.g., limited evaluation).
-3: Borderline Reject - Solid, reject reasons outweigh accept.
-2: Reject - Technical flaws, weak evaluation, inadequate reproducibility, incompletely addressed ethics
+6: Strong Accept - A result experts in the area would want to hear about; the evidence is convincing; remaining flaws are cosmetic
+5: Accept - Main claims hold; the contribution is clear and others will use or build on it; weaknesses are real but fixable
+4: Borderline Accept - Main claims hold, but the contribution is incremental or the evaluation is narrow
+3: Borderline Reject - A main claim lacks adequate support, but the gap could be closed with more work
+2: Reject - A main claim is invalidated, or there is no clear contribution
 1: Strong Reject - Known results or unaddressed ethical issues
-
-Don't be afraid to use 1, 2, 5, and 6.
 
 
 # Confidence
