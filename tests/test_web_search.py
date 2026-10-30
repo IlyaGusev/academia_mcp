@@ -29,6 +29,12 @@ def test_web_search_brave() -> None:
     for entry in result.results:
         assert entry.content is not None
 
+def test_web_search_searxng() -> None:
+    result = web_search("autoregressive models path-star graphs", provider="searxng", limit=10)
+    assert result.results
+    assert result.search_provider == "searxng"
+    for entry in result.results:
+        assert entry.content is not None
 
 def test_web_search_bug() -> None:
     results = web_search(
