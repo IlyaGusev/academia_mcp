@@ -134,7 +134,7 @@ Include the token in the `Authorization` header with the `Bearer` scheme or as a
 Availability notes:
 - Set `WORKSPACE_DIR` to enable `compile_latex`, `read_pdf`, `download_pdf_paper`, and `review_pdf_paper`.
 - Set `OPENROUTER_API_KEY` to enable LLM tools (`document_qa`, `review_pdf_paper`, and bitflip tools).
-- Set one or more of `EXA_API_KEY`, `BRAVE_API_KEY`, `TAVILY_API_KEY` to enable `web_search` and provider tools.
+- Set one or more of `EXA_API_KEY`, `BRAVE_API_KEY`, `TAVILY_API_KEY`, `KEENABLE_API_KEY` to enable `web_search` and provider tools.
 
 ### Environment variables
 Set as needed, depending on which tools you use:
@@ -146,6 +146,7 @@ Set as needed, depending on which tools you use:
 - `TAVILY_API_KEY`: enables Tavily in `web_search`.
 - `EXA_API_KEY`: enables Exa in `web_search` and `visit_webpage`.
 - `BRAVE_API_KEY`: enables Brave in `web_search`.
+- `KEENABLE_API_KEY`: enables Keenable in `web_search`.
 - `WORKSPACE_DIR`: directory for generated files (PDFs, temp artifacts).
 - `PORT`: HTTP port (default `5056`).
 
