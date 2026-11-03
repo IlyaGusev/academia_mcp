@@ -36,6 +36,7 @@ from academia_mcp.tools.speech_to_text import speech_to_text
 from academia_mcp.tools.visit_webpage import visit_webpage
 from academia_mcp.tools.web_search import (
     brave_web_search,
+    keenable_web_search,
     exa_web_search,
     tavily_web_search,
     web_search,
@@ -111,7 +112,14 @@ def create_server(
             server.add_tool(exa_web_search, structured_output=True)
         if settings.BRAVE_API_KEY:
             server.add_tool(brave_web_search, structured_output=True)
-        if settings.EXA_API_KEY or settings.BRAVE_API_KEY or settings.TAVILY_API_KEY:
+        if settings.KEENABLE_API_KEY:
+            server.add_tool(keenable_web_search, structured_output=True)
+        if (
+            settings.EXA_API_KEY
+            or settings.BRAVE_API_KEY
+            or settings.TAVILY_API_KEY
+            or settings.KEENABLE_API_KEY
+        ):
             server.add_tool(web_search, structured_output=True)
         else:
             logger.warning("No web search tools keys are set, web_search will not be available!")

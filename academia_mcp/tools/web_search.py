@@ -8,6 +8,8 @@ from academia_mcp.utils import get_with_retries, post_with_retries, sanitize_out
 EXA_SEARCH_URL = "https://api.exa.ai/search"
 TAVILY_SEARCH_URL = "https://api.tavily.com/search"
 BRAVE_SEARCH_URL = "https://api.search.brave.com/res/v1/web/search"
+KEENABLE_SEARCH_URL = "https://api.keenable.ai/v1/search"
+KEENABLE_SNIPPET_MAX_CHARS = 500
 EXCLUDE_DOMAINS = ["chatpaper.com"]
 
 
@@ -47,17 +49,19 @@ def web_search(
     include_domains: Optional[List[str]] = None,
 ) -> WebSearchResponse:
     """
-    Search the web using Exa Search, Brave Search or Tavily and return normalized results.
+    Search the web using Exa Search, Brave Search, Tavily or Keenable and return normalized results.
     If the specified provider is not available, the function will try to use the next available provider.
 
     Args:
         query: The search query, required.
         limit: The maximum number of items to return. 20 by default, maximum 25.
-        provider: The provider to use. "exa", "tavily" or "brave". "tavily" by default.
+        provider: The provider to use. "exa", "tavily", "brave" or "keenable". "tavily" by default.
         include_domains: Optional list of domains to include in the search. None by default.
     """
-    providers = ("tavily", "brave", "exa")
-    assert provider in providers, "Error: provider must be either 'exa', 'tavily' or 'brave'"
+    providers = ("tavily", "brave", "exa", "keenable")
+    assert (
+        provider in providers
+    ), "Error: provider must be either 'exa', 'tavily', 'brave' or 'keenable'"
     if include_domains:
         assert len(include_domains) > 0, "Error: include_domains should be a non-empty list"
         assert all(
@@ -74,11 +78,13 @@ def web_search(
     is_tavily_available = bool(settings.TAVILY_API_KEY)
     is_exa_available = bool(settings.EXA_API_KEY)
     is_brave_available = bool(settings.BRAVE_API_KEY)
-    assert is_tavily_available or is_exa_available or is_brave_available
+    is_keenable_available = bool(settings.KEENABLE_API_KEY)
+    assert is_tavily_available or is_exa_available or is_brave_available or is_keenable_available
     availability = {
         "tavily": is_tavily_available,
         "brave": is_brave_available,
         "exa": is_exa_available,
+        "keenable": is_keenable_available,
     }
 
     if not availability[provider]:
@@ -94,6 +100,8 @@ def web_search(
         result = brave_web_search(query, limit)
     elif provider == "tavily":
         result = tavily_web_search(query, limit, include_domains=include_domains)
+    elif provider == "keenable":
+        result = keenable_web_search(query, limit)
     assert result is not None, "Error: No provider was available"
     return result
 
@@ -223,3 +231,42 @@ def brave_web_search(
         content = sanitize_output(content)
         entries.append(WebSearchEntry(id=result["url"], title=result["title"], content=content))
     return WebSearchResponse(results=entries, search_provider="brave")
+
+
+def keenable_web_search(query: str, limit: int = 20) -> WebSearchResponse:
+    """
+    Search the web using Keenable and return results.
+
+    Args:
+        query: The search query, required.
+        limit: The maximum number of items to return. 20 by default, maximum 20.
+    """
+    assert isinstance(query, str), "Error: Your search query must be a string"
+    assert query.strip(), "Error: Your query should not be empty"
+    assert isinstance(limit, int), "Error: limit should be an integer"
+    assert 0 < limit <= 20, "Error: limit should be between 1 and 20"
+
+    key = settings.KEENABLE_API_KEY or ""
+    assert key, "Error: KEENABLE_API_KEY is not set and no api_key was provided"
+    payload = {"query": query, "max_results": limit}
+    response = post_with_retries(
+        KEENABLE_SEARCH_URL,
+        payload,
+        key,
+        extra_headers={"X-API-Key": key, "X-Keenable-Title": "Academia MCP"},
+    )
+    results = response.json().get("results") or []
+    entries = []
+    for result in results:
+        url = result.get("url")
+        if not url:
+            continue
+        content = (
+            result.get("description") or (result.get("snippet") or "")[:KEENABLE_SNIPPET_MAX_CHARS]
+        )
+        entries.append(
+            WebSearchEntry(
+                id=url, title=result.get("title") or "", content=sanitize_output(content)
+            )
+        )
+    return WebSearchResponse(results=entries, search_provider="keenable")

@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     TAVILY_API_KEY: Optional[str] = None
     EXA_API_KEY: Optional[str] = None
     BRAVE_API_KEY: Optional[str] = None
+    KEENABLE_API_KEY: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
 
     REVIEW_MODEL_NAME: str = "openai/gpt-6.1-sol"

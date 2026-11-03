@@ -10,7 +10,13 @@ from .review import download_pdf_paper, review_pdf_paper, review_pdf_paper_by_ur
 from .s2 import s2_get_citations, s2_get_info, s2_get_references, s2_search
 from .speech_to_text import speech_to_text
 from .visit_webpage import visit_webpage
-from .web_search import brave_web_search, exa_web_search, tavily_web_search, web_search
+from .web_search import (
+    brave_web_search,
+    exa_web_search,
+    keenable_web_search,
+    tavily_web_search,
+    web_search,
+)
 from .yt_transcript import yt_transcript
 
 __all__ = [
@@ -30,6 +36,7 @@ __all__ = [
     "tavily_web_search",
     "exa_web_search",
     "brave_web_search",
+    "keenable_web_search",
     "visit_webpage",
     "extract_bitflip_info",
     "generate_research_proposals",

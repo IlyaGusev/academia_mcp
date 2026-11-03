@@ -22,6 +22,7 @@ def post_with_retries(
     timeout: int = 30,
     num_retries: int = 3,
     backoff_factor: float = 3.0,
+    extra_headers: Optional[Dict[str, str]] = None,
 ) -> requests.Response:
     retry_strategy = Retry(
         total=num_retries,
@@ -41,6 +42,8 @@ def post_with_retries(
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
+    if extra_headers:
+        headers.update(extra_headers)
 
     response = session.post(url, headers=headers, json=payload, timeout=timeout)
     response.raise_for_status()
